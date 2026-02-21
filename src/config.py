@@ -224,11 +224,11 @@ class Config:
 
     def _get_default_config(self) -> dict:
         """
-        Return default configuration for new users with OpenAI settings.
+        Return default configuration for new users with Groq settings.
         """
         return {
             "api": {
-                "model": "gpt-3.5-turbo"
+                "model": "llama-3.1-70b-versatile"
             },
             "voice_rules": {
                 "tone": "professional",
@@ -244,13 +244,13 @@ class Config:
     @property
     def model(self) -> str:
         """
-        Get configured OpenAI model.
+        Get configured Groq model.
 
         This is a convenience property for accessing the model.
         Rather than config.get("api.model"), you can use config.model.
 
         Returns:
-            str: Model identifier (e.g., "gpt-3.5-turbo")
+            str: Model identifier (e.g., "llama-3.1-70b-versatile")
 
             The returned value is:
             - From config.yaml if user specified it
@@ -260,13 +260,13 @@ class Config:
         Example:
             >>> config = Config()
             >>> model = config.model
-            >>> print(model)  # "gpt-3.5-turbo"
+            >>> print(model)  # "llama-3.1-70b-versatile"
 
         Note:
             The model is used when creating the LLMClient
-            to communicate with OpenAI's API.
+            to communicate with Groq's API.
         """
-        return self.data.get("api", {}).get("model", "gpt-3.5-turbo")
+        return self.data.get("api", {}).get("model", "llama-3.1-70b-versatile")
 
     @property
     def voice_rules(self) -> dict:
