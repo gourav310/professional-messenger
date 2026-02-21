@@ -1,0 +1,12 @@
+api:
+  key: ${OPENAI_API_KEY}
+  model: gpt-3.5-turbo
+
+voice_rules:
+  tone: professional
+  formality: medium
+
+output:
+  num_variants: 2
+  include_explanations: true
+  copy_to_clipboard: true

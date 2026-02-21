@@ -77,7 +77,7 @@ class Config:
     config.yaml should look like:
 
     api:
-      model: claude-3-5-haiku-20241022
+      model: gpt-3.5-turbo
       max_tokens: 2048
 
     voice_rules:
@@ -103,7 +103,7 @@ class Config:
         >>> model = config.model  # Get configured model
         >>> voice = config.voice_rules  # Get tone preferences
         >>> print(config.get("api.model"))
-        # "claude-3-5-haiku-20241022"
+        # "gpt-3.5-turbo"
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -224,111 +224,33 @@ class Config:
 
     def _get_default_config(self) -> dict:
         """
-        Return default configuration for new users.
-
-        These defaults ensure the tool works even without config.yaml.
-        Users can override any of these by creating their own config.yaml.
-
-        WHAT ARE GOOD DEFAULTS:
-        ═══════════════════════════════════════════════════════════════════════
-
-        A good default configuration should:
-        - Work without modification
-        - Reflect best practices
-        - Be safe (won't cause issues)
-        - Be overridable (user can change easily)
-        - Include common options
-
-        THESE DEFAULTS:
-        ═══════════════════════════════════════════════════════════════════════
-
-        1. API Settings:
-           - Model: claude-3-5-haiku (fast and capable)
-           - This balances cost, speed, and quality
-
-        2. Voice Rules:
-           - Tone: "professional" (safe default for business)
-           - Formality: "medium" (not too formal, not too casual)
-
-        3. Output Settings:
-           - Variants: 2 (gives choice without overwhelming)
-           - Explanations: true (users like to understand why)
-           - Clipboard: true (convenience on supported systems)
-
-        WHY THESE SPECIFIC DEFAULTS:
-        ═══════════════════════════════════════════════════════════════════════
-
-        - Haiku model: Sufficient for message composition, faster than larger models
-        - Professional tone: Safest for business messages
-        - Medium formality: Works for most business relationships
-        - 2 variants: Balances choice vs. decision paralysis
-        - Explanations on: Helps users learn
-
-        Returns:
-            dict: Default configuration with reasonable values
-
-            Structure:
-            {
-                "api": {...},
-                "voice_rules": {...},
-                "output": {...}
-            }
-
-        Note:
-            Users can override by creating config.yaml with their own settings.
-            Missing settings will be filled in by get() method defaults.
+        Return default configuration for new users with OpenAI settings.
         """
         return {
-            # API Configuration
-            # What Claude model to use
-            # See: https://docs.anthropic.com/claude/reference/getting-started-with-the-api
             "api": {
-                "model": "claude-3-5-haiku-20241022"
-                # Haiku: Fast, capable, cost-effective
-                # Other options: claude-3-5-sonnet-20241022, claude-opus-4-1
+                "model": "gpt-3.5-turbo"
             },
-
-            # Voice and Communication Rules
-            # How messages should sound
             "voice_rules": {
                 "tone": "professional",
-                # Options: professional, casual, friendly, formal, direct
-                # Describes the emotional tone
-
                 "formality": "medium"
-                # Options: low (casual), medium (professional), high (very formal)
-                # Controls how proper/stiff vs relaxed the message is
             },
-
-            # Output Configuration
-            # How results are presented to the user
             "output": {
                 "num_variants": 2,
-                # Number of message variants to show
-                # 2-3 is good balance (choice without paralysis)
-
                 "include_explanations": True,
-                # Whether to show Claude's reasoning
-                # True: Users understand the improvements
-                # False: Just show the message variants
-
                 "copy_to_clipboard": True
-                # Auto-copy best variant to clipboard
-                # True: Convenient (paste and send)
-                # False: User must manually copy
             }
         }
 
     @property
     def model(self) -> str:
         """
-        Get configured Claude model.
+        Get configured OpenAI model.
 
         This is a convenience property for accessing the model.
         Rather than config.get("api.model"), you can use config.model.
 
         Returns:
-            str: Model identifier (e.g., "claude-3-5-haiku-20241022")
+            str: Model identifier (e.g., "gpt-3.5-turbo")
 
             The returned value is:
             - From config.yaml if user specified it
@@ -338,13 +260,13 @@ class Config:
         Example:
             >>> config = Config()
             >>> model = config.model
-            >>> print(model)  # "claude-3-5-haiku-20241022"
+            >>> print(model)  # "gpt-3.5-turbo"
 
         Note:
             The model is used when creating the LLMClient
-            to communicate with Claude's API.
+            to communicate with OpenAI's API.
         """
-        return self.data.get("api", {}).get("model", "claude-3-5-haiku-20241022")
+        return self.data.get("api", {}).get("model", "gpt-3.5-turbo")
 
     @property
     def voice_rules(self) -> dict:
@@ -370,7 +292,7 @@ class Config:
             >>> print(rules.get('formality'))  # "medium"
 
         Note:
-            These are passed to Claude's system prompt
+            These are passed to the system prompt
             to guide the tone of composed messages.
         """
         return self.data.get("voice_rules", {})
@@ -380,7 +302,7 @@ class Config:
         """
         Get example messages for style reference.
 
-        Example messages help Claude understand the desired style.
+        Example messages help the LLM understand the desired style.
         They show "here's what good looks like".
 
         For example, if you provide:
@@ -389,7 +311,7 @@ class Config:
             "bad_message": "hey boss project ok now"
         }
 
-        Claude can use these to understand the style difference
+        The LLM can use these to understand the style difference
         and compose messages in the "good" style.
 
         Returns:
@@ -410,7 +332,7 @@ class Config:
 
         Note:
             Optional - if not in config.yaml, returns empty dict.
-            Claude still works without examples, but can be more
+            LLM still works without examples, but can be more
             accurate with them.
         """
         return self.data.get("examples", {})
@@ -508,7 +430,7 @@ class Config:
             >>>
             >>> # Get with no default (returns None if missing)
             >>> model = config.get("api.model")
-            >>> # Returns "claude-3-5-haiku-20241022"
+            >>> # Returns "gpt-3.5-turbo"
             >>>
             >>> # Get with default value
             >>> max_tokens = config.get("api.max_tokens", 2048)
@@ -538,7 +460,7 @@ class Config:
         # Example walkthrough for "api.model":
         # - Iteration 1: k="api", value=dict, value = value.get("api")
         # - Iteration 2: k="model", value=dict, value = value.get("model")
-        # - End: value = "claude-3-5-haiku-20241022"
+        # - End: value = "gpt-3.5-turbo"
         for k in keys:
             # Check if we can still navigate deeper
             if isinstance(value, dict):

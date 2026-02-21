@@ -1,11 +1,11 @@
 """
-Tests for the LLMClient wrapper around the Anthropic SDK.
+Tests for the LLMClient wrapper around the OpenAI SDK.
 
 This test file demonstrates how to test agent infrastructure in isolation.
 We use mocking to avoid actual API calls while still verifying behavior.
 
 TEST STRATEGY:
-The tests in this file use unittest.mock to simulate Claude API responses.
+The tests in this file use unittest.mock to simulate OpenAI API responses.
 This allows us to:
 1. Test without API keys or network access
 2. Test error cases and edge cases
@@ -26,25 +26,25 @@ from src.llm_client import LLMClient
 class TestLLMClientInitialization:
     """Tests for LLMClient initialization and setup."""
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_initialization(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_initialization(self, mock_openai_class):
         """
         Test that LLMClient initializes properly with API key and model.
 
         This test verifies the basic initialization flow:
         1. Client accepts api_key and model parameters
         2. Client stores these for later use
-        3. Client initializes the underlying Anthropic client
+        3. Client initializes the underlying OpenAI client
 
         Why this matters:
         - Ensures client is properly configured before use
         - Verifies parameters are stored correctly
         - Foundation for all other tests
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         assert client.api_key == "test-key"
-        assert client.model == "claude-3-5-haiku-20241022"
+        assert client.model == "gpt-3.5-turbo"
 
     def test_llm_client_missing_api_key(self):
         """
@@ -52,7 +52,7 @@ class TestLLMClientInitialization:
 
         This test verifies error handling:
         1. If no API key is provided
-        2. And CLAUDE_API_KEY environment variable is not set
+        2. And OPENAI_API_KEY environment variable is not set
         3. Then initialization should raise ValueError with clear message
 
         Why this matters:
@@ -62,19 +62,19 @@ class TestLLMClientInitialization:
         """
         # This test runs with environment variable not set
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(api_key=None, model="claude-3-5-haiku-20241022")
+            LLMClient(api_key=None, model="gpt-3.5-turbo")
 
         # Verify error message is helpful
         assert "API key" in str(exc_info.value)
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_uses_environment_variable(self, mock_anthropic_class, monkeypatch):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_uses_environment_variable(self, mock_openai_class, monkeypatch):
         """
-        Test that LLMClient reads API key from CLAUDE_API_KEY environment variable.
+        Test that LLMClient reads API key from OPENAI_API_KEY environment variable.
 
         This test verifies configuration from environment:
         1. If api_key parameter is None
-        2. And CLAUDE_API_KEY is set in environment
+        2. And OPENAI_API_KEY is set in environment
         3. Then client should use the environment variable
 
         Why this matters:
@@ -83,10 +83,10 @@ class TestLLMClientInitialization:
         - Supports different environments (dev, staging, prod)
         """
         # Set environment variable for this test
-        monkeypatch.setenv("CLAUDE_API_KEY", "env-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "env-key")
 
         # Create client without explicit api_key
-        client = LLMClient(api_key=None, model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key=None, model="gpt-3.5-turbo")
 
         # Should use environment variable
         assert client.api_key == "env-key"
@@ -95,8 +95,8 @@ class TestLLMClientInitialization:
 class TestMessageFormatting:
     """Tests for message preparation and formatting."""
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_formats_messages(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_formats_messages(self, mock_openai_class):
         """
         Test that client validates and formats messages correctly.
 
@@ -106,14 +106,14 @@ class TestMessageFormatting:
         3. Client returns formatted messages ready for API
 
         Why this matters:
-        - Claude API has strict message format requirements
+        - OpenAI API has strict message format requirements
         - Early validation catches errors before API call
         - Clear error messages help debugging
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         messages = [
-            {"role": "user", "content": "Hello, Claude"}
+            {"role": "user", "content": "Hello, OpenAI"}
         ]
 
         # This should not raise an error
@@ -123,10 +123,10 @@ class TestMessageFormatting:
         assert isinstance(formatted, list)
         assert len(formatted) == 1
         assert formatted[0]["role"] == "user"
-        assert formatted[0]["content"] == "Hello, Claude"
+        assert formatted[0]["content"] == "Hello, OpenAI"
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_handles_multiple_messages(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_handles_multiple_messages(self, mock_openai_class):
         """
         Test that client handles multi-turn conversations correctly.
 
@@ -137,10 +137,10 @@ class TestMessageFormatting:
 
         Why this matters:
         - Professional Messenger needs to maintain conversation history
-        - Message order affects Claude's reasoning
+        - Message order affects OpenAI's reasoning
         - Agents reason by building on previous exchanges
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         messages = [
             {"role": "user", "content": "Analyze this message"},
@@ -156,8 +156,8 @@ class TestMessageFormatting:
         assert formatted[1]["role"] == "assistant"
         assert formatted[2]["role"] == "user"
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_rejects_invalid_messages(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_rejects_invalid_messages(self, mock_openai_class):
         """
         Test that client rejects malformed messages with clear errors.
 
@@ -171,7 +171,7 @@ class TestMessageFormatting:
         - Helps developers quickly fix message structure
         - Critical for robust agent implementations
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Message missing "role"
         invalid_message = [{"content": "Hello"}]
@@ -187,31 +187,31 @@ class TestMessageFormatting:
 class TestToolHandling:
     """Tests for tool/function calling setup and handling."""
 
-    @patch('src.llm_client.Anthropic')
-    def test_llm_client_call_with_tools(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_llm_client_call_with_tools(self, mock_openai_class):
         """
         Test that client properly handles tool definitions.
 
         This test verifies tool handling:
         1. Client should accept tools parameter
-        2. Tools should be in Claude API format
+        2. Tools should be in OpenAI API format
         3. Client should pass tools to API in requests
 
         Why this matters:
         - Tools enable agents to do real work
-        - Proper tool formatting is critical for Claude
+        - Proper tool formatting is critical for OpenAI
         - Tests verify this works before real reasoning loops
 
         Note: This test just verifies the method exists and accepts parameters.
         The actual create_message method will be tested more thoroughly below.
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         tools = [
             {
                 "name": "test_tool",
                 "description": "A test tool for unit testing",
-                "input_schema": {
+                "parameters": {
                     "type": "object",
                     "properties": {
                         "input": {"type": "string"}
@@ -226,15 +226,15 @@ class TestToolHandling:
 
 
 class TestMessageCreation:
-    """Tests for creating messages via Claude API."""
+    """Tests for creating messages via OpenAI API."""
 
-    @patch('src.llm_client.Anthropic')
-    def test_create_message_sends_request(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_create_message_sends_request(self, mock_openai_class):
         """
         Test that create_message properly constructs and sends API request.
 
         This test verifies API request handling:
-        1. Client should call Anthropic API with correct parameters
+        1. Client should call OpenAI API with correct parameters
         2. Request should include model, messages, and max_tokens
         3. System prompt should be included if provided
 
@@ -244,17 +244,17 @@ class TestMessageCreation:
         - Critical for agent reasoning to work
 
         MOCKING STRATEGY:
-        We mock the Anthropic client to avoid actual API calls.
+        We mock the OpenAI client to avoid actual API calls.
         We verify the mock was called with correct parameters.
         """
         # Setup mock
         mock_client = MagicMock()
-        mock_anthropic_class.return_value = mock_client
+        mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
-        mock_client.messages.create.return_value = mock_response
+        mock_client.chat.completions.create.return_value = mock_response
 
-        # Create real client with mocked Anthropic
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        # Create real client with mocked OpenAI
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Create a message
         messages = [{"role": "user", "content": "Hello"}]
@@ -265,17 +265,19 @@ class TestMessageCreation:
         )
 
         # Verify API was called
-        mock_client.messages.create.assert_called_once()
+        mock_client.chat.completions.create.assert_called_once()
 
         # Get the arguments to verify they're correct
-        call_kwargs = mock_client.messages.create.call_args[1]
-        assert call_kwargs['model'] == "claude-3-5-haiku-20241022"
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
+        assert call_kwargs['model'] == "gpt-3.5-turbo"
         assert call_kwargs['max_tokens'] == 100
-        assert call_kwargs['system'] == "You are helpful"
-        assert call_kwargs['messages'] == messages
+        # System message is prepended to messages list
+        assert len(call_kwargs['messages']) == 2
+        assert call_kwargs['messages'][0]['role'] == "system"
+        assert call_kwargs['messages'][1]['role'] == "user"
 
-    @patch('src.llm_client.Anthropic')
-    def test_create_message_with_tools(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_create_message_with_tools(self, mock_openai_class):
         """
         Test that create_message includes tools in API request.
 
@@ -291,19 +293,19 @@ class TestMessageCreation:
         """
         # Setup mock
         mock_client = MagicMock()
-        mock_anthropic_class.return_value = mock_client
+        mock_openai_class.return_value = mock_client
         mock_response = MagicMock()
-        mock_client.messages.create.return_value = mock_response
+        mock_client.chat.completions.create.return_value = mock_response
 
-        # Create real client with mocked Anthropic
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        # Create real client with mocked OpenAI
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Create a message with tools
         tools = [
             {
                 "name": "analyze_tone",
                 "description": "Analyze message tone",
-                "input_schema": {"type": "object"}
+                "parameters": {"type": "object"}
             }
         ]
         messages = [{"role": "user", "content": "Analyze this"}]
@@ -313,45 +315,48 @@ class TestMessageCreation:
         )
 
         # Verify API was called with tools
-        call_kwargs = mock_client.messages.create.call_args[1]
+        call_kwargs = mock_client.chat.completions.create.call_args[1]
         assert 'tools' in call_kwargs
         assert call_kwargs['tools'] == tools
 
 
 class TestResponseParsing:
-    """Tests for extracting information from Claude responses."""
+    """Tests for extracting information from OpenAI responses."""
 
-    @patch('src.llm_client.Anthropic')
-    def test_extract_text_from_response(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_extract_text_from_response(self, mock_openai_class):
         """
-        Test that client extracts text from Claude's response.
+        Test that client extracts text from OpenAI's response.
 
         This test verifies response parsing:
-        1. Claude returns different types of content
+        1. OpenAI returns different types of content
         2. Client should extract just the text content
         3. Return empty string if no text found
 
         Why this matters:
-        - Agents need to read what Claude responded
+        - Agents need to read what OpenAI responded
         - Response might contain text, tool calls, or both
         - Must handle different response structures
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Create a mock response with text content
-        mock_text_block = MagicMock()
-        mock_text_block.text = "Claude's response text"
+        mock_message = MagicMock()
+        mock_message.content = "OpenAI's response text"
+
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
 
         mock_response = MagicMock()
-        mock_response.content = [mock_text_block]
+        mock_response.choices = [mock_choice]
 
         # Extract text
         text = client.extract_text(mock_response)
 
-        assert text == "Claude's response text"
+        assert text == "OpenAI's response text"
 
-    @patch('src.llm_client.Anthropic')
-    def test_extract_text_returns_empty_when_no_text(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_extract_text_returns_empty_when_no_text(self, mock_openai_class):
         """
         Test that extract_text returns empty string when no text in response.
 
@@ -365,16 +370,17 @@ class TestResponseParsing:
         - Code should handle this gracefully
         - Prevents crashes in reasoning loops
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Create a mock response with no text
-        # Use spec to prevent auto-creation of attributes
-        mock_tool_use_block = MagicMock(spec=['type'])
-        mock_tool_use_block.type = "tool_use"
-        # No text attribute - spec prevents it
+        mock_message = MagicMock()
+        mock_message.content = None
+
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
 
         mock_response = MagicMock()
-        mock_response.content = [mock_tool_use_block]
+        mock_response.choices = [mock_choice]
 
         # Extract text
         text = client.extract_text(mock_response)
@@ -382,13 +388,13 @@ class TestResponseParsing:
         # Should return empty string, not error
         assert text == ""
 
-    @patch('src.llm_client.Anthropic')
-    def test_extract_tool_use_from_response(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_extract_tool_use_from_response(self, mock_openai_class):
         """
-        Test that client extracts tool use from Claude's response.
+        Test that client extracts tool use from OpenAI's response.
 
         This test verifies tool extraction:
-        1. Claude can decide to use a tool
+        1. OpenAI can decide to use a tool
         2. Client should extract tool call details
         3. Return dict with name, id, input
 
@@ -398,23 +404,31 @@ class TestResponseParsing:
         - Enables execution of agent decisions
 
         AGENT REASONING LOOP:
-        1. Agent sends message + tools to Claude
-        2. Claude responds with tool_use block
+        1. Agent sends message + tools to OpenAI
+        2. OpenAI responds with tool_calls
         3. Agent extracts and executes the tool
         4. Agent adds result to conversation
         5. Loop continues until no more tool calls
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
-        # Create a mock response with tool use
-        mock_tool_use_block = MagicMock()
-        mock_tool_use_block.type = "tool_use"
-        mock_tool_use_block.name = "analyze_tone"
-        mock_tool_use_block.id = "call_123"
-        mock_tool_use_block.input = {"text": "Hello"}
+        # Create a mock response with tool call
+        mock_function = MagicMock()
+        mock_function.name = "analyze_tone"
+        mock_function.arguments = '{"text": "Hello"}'
+
+        mock_tool_call = MagicMock()
+        mock_tool_call.function = mock_function
+        mock_tool_call.id = "call_123"
+
+        mock_message = MagicMock()
+        mock_message.tool_calls = [mock_tool_call]
+
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
 
         mock_response = MagicMock()
-        mock_response.content = [mock_tool_use_block]
+        mock_response.choices = [mock_choice]
 
         # Extract tool use
         tool_use = client.extract_tool_use(mock_response)
@@ -425,13 +439,13 @@ class TestResponseParsing:
         assert tool_use["id"] == "call_123"
         assert tool_use["input"] == {"text": "Hello"}
 
-    @patch('src.llm_client.Anthropic')
-    def test_extract_tool_use_returns_none_when_not_present(self, mock_anthropic_class):
+    @patch('src.llm_client.OpenAI')
+    def test_extract_tool_use_returns_none_when_not_present(self, mock_openai_class):
         """
         Test that extract_tool_use returns None when no tool is called.
 
         This test verifies graceful handling:
-        1. Claude might respond with only text (no tool use)
+        1. OpenAI might respond with only text (no tool calls)
         2. Client should return None to indicate no tool call
         3. Agent checks for None to decide next action
 
@@ -440,14 +454,18 @@ class TestResponseParsing:
         - Agent knows: if None, return final answer
         - If tool_use, execute and continue loop
         """
-        client = LLMClient(api_key="test-key", model="claude-3-5-haiku-20241022")
+        client = LLMClient(api_key="test-key", model="gpt-3.5-turbo")
 
         # Create a mock response with only text
-        mock_text_block = MagicMock()
-        mock_text_block.text = "Here is my answer"
+        mock_message = MagicMock()
+        mock_message.content = "Here is my answer"
+        mock_message.tool_calls = None
+
+        mock_choice = MagicMock()
+        mock_choice.message = mock_message
 
         mock_response = MagicMock()
-        mock_response.content = [mock_text_block]
+        mock_response.choices = [mock_choice]
 
         # Extract tool use
         tool_use = client.extract_tool_use(mock_response)
