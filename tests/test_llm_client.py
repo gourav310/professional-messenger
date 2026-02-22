@@ -41,10 +41,10 @@ class TestLLMClientInitialization:
         - Verifies parameters are stored correctly
         - Foundation for all other tests
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         assert client.api_key == "test-key"
-        assert client.model == "mixtral-8x7b-32768"
+        assert client.model == "llama-3.3-70b-versatile"
 
     def test_llm_client_missing_api_key(self):
         """
@@ -62,7 +62,7 @@ class TestLLMClientInitialization:
         """
         # This test runs with environment variable not set
         with pytest.raises(ValueError) as exc_info:
-            LLMClient(api_key=None, model="mixtral-8x7b-32768")
+            LLMClient(api_key=None, model="llama-3.3-70b-versatile")
 
         # Verify error message is helpful
         assert "API key" in str(exc_info.value)
@@ -86,7 +86,7 @@ class TestLLMClientInitialization:
         monkeypatch.setenv("GROQ_API_KEY", "env-key")
 
         # Create client without explicit api_key
-        client = LLMClient(api_key=None, model="mixtral-8x7b-32768")
+        client = LLMClient(api_key=None, model="llama-3.3-70b-versatile")
 
         # Should use environment variable
         assert client.api_key == "env-key"
@@ -110,7 +110,7 @@ class TestMessageFormatting:
         - Early validation catches errors before API call
         - Clear error messages help debugging
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         messages = [
             {"role": "user", "content": "Hello, OpenAI"}
@@ -140,7 +140,7 @@ class TestMessageFormatting:
         - Message order affects Groq's reasoning
         - Agents reason by building on previous exchanges
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         messages = [
             {"role": "user", "content": "Analyze this message"},
@@ -171,7 +171,7 @@ class TestMessageFormatting:
         - Helps developers quickly fix message structure
         - Critical for robust agent implementations
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Message missing "role"
         invalid_message = [{"content": "Hello"}]
@@ -205,7 +205,7 @@ class TestToolHandling:
         Note: This test just verifies the method exists and accepts parameters.
         The actual create_message method will be tested more thoroughly below.
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         tools = [
             {
@@ -254,7 +254,7 @@ class TestMessageCreation:
         mock_client.chat.completions.create.return_value = mock_response
 
         # Create real client with mocked Groq
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a message
         messages = [{"role": "user", "content": "Hello"}]
@@ -269,7 +269,7 @@ class TestMessageCreation:
 
         # Get the arguments to verify they're correct
         call_kwargs = mock_client.chat.completions.create.call_args[1]
-        assert call_kwargs['model'] == "mixtral-8x7b-32768"
+        assert call_kwargs['model'] == "llama-3.3-70b-versatile"
         assert call_kwargs['max_tokens'] == 100
         # System message is prepended to messages list
         assert len(call_kwargs['messages']) == 2
@@ -298,7 +298,7 @@ class TestMessageCreation:
         mock_client.chat.completions.create.return_value = mock_response
 
         # Create real client with mocked Groq
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a message with tools
         tools = [
@@ -338,7 +338,7 @@ class TestResponseParsing:
         - Response might contain text, tool calls, or both
         - Must handle different response structures
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a mock response with text content
         mock_message = MagicMock()
@@ -370,7 +370,7 @@ class TestResponseParsing:
         - Code should handle this gracefully
         - Prevents crashes in reasoning loops
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a mock response with no text
         mock_message = MagicMock()
@@ -410,7 +410,7 @@ class TestResponseParsing:
         4. Agent adds result to conversation
         5. Loop continues until no more tool calls
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a mock response with tool call
         mock_function = MagicMock()
@@ -454,7 +454,7 @@ class TestResponseParsing:
         - Agent knows: if None, return final answer
         - If tool_use, execute and continue loop
         """
-        client = LLMClient(api_key="test-key", model="mixtral-8x7b-32768")
+        client = LLMClient(api_key="test-key", model="llama-3.3-70b-versatile")
 
         # Create a mock response with only text
         mock_message = MagicMock()
