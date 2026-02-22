@@ -11,7 +11,7 @@ THE REASONING LOOP (the key concept):
 
 The agent reasoning loop is the core pattern that makes agents powerful.
 Instead of the programmer deciding "first analyze tone, then structure,
-then clarity", the agent (Claude) looks at the task and decides what it
+then clarity", the agent (LLM) looks at the task and decides what it
 needs. This adaptive decision-making is what makes agents intelligent.
 
 Here's the loop in detail:
@@ -27,21 +27,21 @@ Here's the loop in detail:
 │                                                                          │
 │  Step 2: PRESENT CLAUDE WITH TOOLS                                     │
 │  ──────────────────────────────────                                    │
-│  Agent creates message to Claude saying:                               │
+│  Agent creates message to LLM saying:                               │
 │  "Here's a message someone wrote. Tools available: analyze_tone,       │
 │   suggest_structure, check_clarity. What should you do?"               │
 │                                                                          │
 │  Step 3: CLAUDE DECIDES (THE AUTONOMOUS PART)                          │
 │  ───────────────────────────────────────────────                       │
-│  Claude reads the message and tools, then decides:                     │
+│  LLM reads the message and tools, then decides:                     │
 │  - "This has tone issues (too informal, rushed)"                       │
 │  - "This needs structure (missing context, unclear impact)"            │
 │  - "This has clarity issues (which boss? when? why delayed?)"          │
-│  → Claude decides: "I'll use analyze_tone and check_clarity first"     │
+│  → LLM decides: "I'll use analyze_tone and check_clarity first"     │
 │                                                                          │
 │  Step 4: CLAUDE CALLS TOOLS                                            │
 │  ───────────────────────────                                           │
-│  Claude returns (in this iteration):                                   │
+│  LLM returns (in this iteration):                                   │
 │  Tool call 1: analyze_tone(text="hey i need tell...", target="formal") │
 │  This is just a declaration - we need to execute it                    │
 │                                                                          │
@@ -60,12 +60,12 @@ Here's the loop in detail:
 │                                                                          │
 │  Step 7: LOOP CONTINUES (CLAUDE REFINES)                               │
 │  ──────────────────────────────────────                                │
-│  Claude now sees:                                                       │
+│  LLM now sees:                                                       │
 │  - The original message                                                │
 │  - The tone analysis result                                            │
-│  Claude thinks: "Now I know the tone issues. Let me check clarity."    │
-│  Claude decides: "I'll use check_clarity tool"                         │
-│  Claude calls: check_clarity(message="hey i need tell...")             │
+│  LLM thinks: "Now I know the tone issues. Let me check clarity."    │
+│  LLM decides: "I'll use check_clarity tool"                         │
+│  LLM calls: check_clarity(message="hey i need tell...")             │
 │                                                                          │
 │  Step 8: EXECUTE NEXT TOOL                                             │
 │  ──────────────────────────                                            │
@@ -74,9 +74,9 @@ Here's the loop in detail:
 │                                                                          │
 │  Step 9: LOOP CONTINUES AGAIN                                          │
 │  ───────────────────────────                                           │
-│  Claude now has tone AND clarity analysis. It decides:                 │
+│  LLM now has tone AND clarity analysis. It decides:                 │
 │  "I have enough information. I can now compose professional variants." │
-│  Claude returns TEXT (no more tools): "Here are 3 professional versions" │
+│  LLM returns TEXT (no more tools): "Here are 3 professional versions" │
 │                                                                          │
 │  Step 10: LOOP ENDS (FINAL ANSWER)                                     │
 │  ──────────────────────────────────                                    │
@@ -106,11 +106,11 @@ Traditional programming (if you had to do it):
   → Inefficient, same steps for every message, rigid
 
 Agent reasoning loop:
-  1. Claude looks at input and available tools
+  1. LLM looks at input and available tools
   2. Claude decides which tools are relevant
   3. Claude calls only needed tools
-  4. Claude iterates based on results
-  5. Claude stops when satisfied
+  4. LLM iterates based on results
+  5. LLM stops when satisfied
   → Adaptive, efficient, intelligent
 
 The agent doesn't blindly apply all steps. Instead, it's like having
@@ -137,10 +137,10 @@ Problems with that approach:
 5. MISSING ITERATION: Maybe first result suggests you need more analysis?
 
 With the reasoning loop:
-1. Claude looks at the input
+1. LLM looks at the input
 2. Claude decides order and what's needed
-3. Claude iterates based on results
-4. Claude stops when ready
+3. LLM iterates based on results
+4. LLM stops when ready
 5. Claude adapts to different inputs differently
 
 DESIGN PHILOSOPHY: HYBRID ARCHITECTURE
@@ -164,7 +164,7 @@ In the future, tools could be:
 - Database lookups
 - Actual NLP models
 
-The key: Claude still decides when and how to use them!
+The key: LLM still decides when and how to use them!
 """
 
 from typing import Optional
@@ -189,10 +189,10 @@ class MessageComposerAgent(Agent):
 
     KEY DESIGN: The agent doesn't pre-decide what to do. Instead:
     - Available tools are presented to Claude
-    - Claude looks at the specific input
+    - LLM looks at the specific input
     - Claude decides which tools to use
-    - Claude iterates based on results
-    - Claude returns final answer when ready
+    - LLM iterates based on results
+    - LLM returns final answer when ready
 
     This makes the agent ADAPTIVE and INTELLIGENT, not just procedural.
 
@@ -206,10 +206,10 @@ class MessageComposerAgent(Agent):
     ─────────────────
     Claude sees: raw message + available tools (analyze_tone, suggest_structure,
                  check_clarity)
-    Claude thinks: "This message has tone issues (informal), structure problems
+    LLM thinks: "This message has tone issues (informal), structure problems
                    (missing context), and clarity issues (vague)"
-    Claude decides: "I need to analyze tone and check clarity"
-    Claude calls: analyze_tone(text="hey i wnat...", target_tone="professional")
+    LLM decides: "I need to analyze tone and check clarity"
+    LLM calls: analyze_tone(text="hey i wnat...", target_tone="professional")
     Tool returns: "Current tone: informal/rushed. Too many abbreviations. No
                    professionalism markers. Missing context. Suggestion: Slow
                    down, use complete words, add details."
@@ -217,9 +217,9 @@ class MessageComposerAgent(Agent):
     Loop Iteration 2:
     ─────────────────
     Claude sees: original message + tone analysis + available tools
-    Claude thinks: "Now I understand the tone issues. Let me check clarity."
-    Claude decides: "I'll use check_clarity tool"
-    Claude calls: check_clarity(message="hey i wnat...")
+    LLM thinks: "Now I understand the tone issues. Let me check clarity."
+    LLM decides: "I'll use check_clarity tool"
+    LLM calls: check_clarity(message="hey i wnat...")
     Tool returns: "Clarity issues: (1) Missing which boss, (2) No timeline,
                    (3) No explanation of why, (4) 'wnat' typo. Suggest:
                    Specify recipient, be explicit about timeline, explain
@@ -228,10 +228,10 @@ class MessageComposerAgent(Agent):
     Loop Iteration 3:
     ─────────────────
     Claude sees: original message + tone analysis + clarity analysis + tools
-    Claude thinks: "I have good analysis now. Time to compose variants."
-    Claude decides: "I have enough information. Let me synthesize professional
+    LLM thinks: "I have good analysis now. Time to compose variants."
+    LLM decides: "I have enough information. Let me synthesize professional
                     message variants."
-    Claude returns: TEXT (not tool use) with 3 message variants:
+    LLM returns: TEXT (not tool use) with 3 message variants:
       Variant 1 (Formal):
         "I need to inform you that the project has encountered delays..."
       Variant 2 (Friendly-Professional):
@@ -257,7 +257,7 @@ class MessageComposerAgent(Agent):
 
     Loop would be:
     1. Claude sees: Already professional tone
-    2. Claude decides: Skip tone analysis, focus on clarity
+    2. LLM decides: Skip tone analysis, focus on clarity
     3. Claude: check_clarity()
     4. Claude: compose()
     Total: 2 iterations (more efficient!)
@@ -267,7 +267,7 @@ class MessageComposerAgent(Agent):
 
     Loop would be:
     1. Claude sees: Good tone, but structure issues
-    2. Claude decides: Skip tone, do structure analysis
+    2. LLM decides: Skip tone, do structure analysis
     3. Claude: suggest_structure()
     4. Claude: compose()
     Total: 2 iterations (different path!)
@@ -287,7 +287,7 @@ class MessageComposerAgent(Agent):
     The reasoning loop (compose method):
     1. Initialize conversation history (empty list)
     2. Add user's raw message as initial prompt
-    3. Loop until Claude returns text (not tool use):
+    3. Loop until LLM returns text (not tool use):
        a. Call Claude with current conversation + available tools
        b. Check if Claude called a tool or returned text
        c. If tool: execute it, add result to conversation, loop again
@@ -486,7 +486,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         """
         Define and register tools the agent can use.
 
-        Tools are capabilities that Claude can invoke to gather information.
+        Tools are capabilities that LLM can invoke to gather information.
         By presenting these tools, we tell Claude what analysis is available
         and empower it to make intelligent decisions about what to do.
 
@@ -498,7 +498,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         - "You should be more professional"
         - Generic advice, not specific to your message
 
-        With tools, Claude can:
+        With tools, LLM can:
         1. See available analysis capabilities
         2. Analyze the specific input using those tools
         3. Make intelligent decisions based on results
@@ -509,11 +509,11 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         Tool available: analyze_tone
         User input: "hey i wnat tell boss project delayed"
 
-        Claude thinks:
+        LLM thinks:
         "Looking at this message, I see informal tone. Let me use
          analyze_tone to get specific feedback."
 
-        Claude calls: analyze_tone(text="hey i wnat...", target="professional")
+        LLM calls: analyze_tone(text="hey i wnat...", target="professional")
 
         Tool returns: "Current: informal, rushed, typos. Issues: abbreviations,
                       missing context. Suggestions: complete words, details."
@@ -550,19 +550,19 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         - Identifies emotional tone and professionalism level
         - Helps Claude understand what's wrong with tone
         - Enables Claude to compose variants with different tones
-        - Without it: Claude can't specifically analyze tone
+        - Without it: LLM can't specifically analyze tone
 
         suggest_structure:
         - Recommends logical organization
         - Helps Claude understand message flow
         - Enables Claude to reorganize information
-        - Without it: Claude can't analyze structure
+        - Without it: LLM can't analyze structure
 
         check_clarity:
         - Finds ambiguous or missing parts
         - Helps Claude identify what's unclear
         - Enables Claude to request clarification or rephrase
-        - Without it: Claude can't specifically identify clarity issues
+        - Without it: LLM can't specifically identify clarity issues
 
         Together: These three tools give Claude the information needed to
         understand a message from multiple perspectives (tone, structure,
@@ -737,7 +737,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         # - Makes it available for get_tools_for_api()
         # - Makes it available for Claude to use
         #
-        # The order doesn't matter for Claude's decision-making, but we
+        # The order doesn't matter for LLM's decision-making, but we
         # register them in a logical order (tone, structure, clarity)
         # for readability and debugging.
         # ═════════════════════════════════════════════════════════════════
@@ -752,7 +752,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
 
         This is the core method that demonstrates the agent reasoning loop.
         It takes raw, unstructured input and iteratively improves it using
-        Claude's reasoning and tool use.
+        LLM's reasoning and tool use.
 
         THE REASONING LOOP (In this method):
         ════════════════════════════════════════════════════════════════════
@@ -774,7 +774,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
            a. CALL CLAUDE WITH TOOLS:
               - Send conversation history + available tools
               - Claude sees the tools and thinks about the task
-              - Claude decides: "Do I need tools or do I have the answer?"
+              - LLM decides: "Do I need tools or do I have the answer?"
 
            b. CHECK CLAUDE'S RESPONSE:
               - If Claude called a tool: extract tool_name and tool_input
@@ -783,11 +783,11 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
            c. IF TOOL CALL:
               - Execute the tool (actually run the analysis)
               - Get the result back
-              - Add Claude's call + result to conversation history
-              - Loop again (Claude will see the result and decide next step)
+              - Add LLM's call + result to conversation history
+              - Loop again (LLM will see the result and decide next step)
 
            d. IF TEXT:
-              - Claude has the final answer
+              - LLM has the final answer
               - Extract and parse the message variants
               - Return results to user
               - Loop ends
@@ -824,50 +824,50 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         We send Claude: "Analyze this message. Tools available: analyze_tone,
                          suggest_structure, check_clarity."
 
-        Claude thinks: "This message is informal, unclear about what boss,
+        LLM thinks: "This message is informal, unclear about what boss,
                        no timeline specified. I need to understand the issues."
 
-        Claude decides: "I'll call analyze_tone"
+        LLM decides: "I'll call analyze_tone"
 
-        Claude returns: Tool call to analyze_tone(text="hey i need tell my boss...")
+        LLM returns: Tool call to analyze_tone(text="hey i need tell my boss...")
 
         We execute: analyze_tone() → Result: "Tone is informal, rushed.
                                              Needs professional vocabulary..."
 
         We add to conversation:
-        - Claude's response (the tool call)
+        - LLM's response (the tool call)
         - The tool result
 
         Iteration 2:
         ───────────
         Claude sees: Original message + tone analysis + available tools
 
-        Claude thinks: "Now I know the tone issues. But there's also
+        LLM thinks: "Now I know the tone issues. But there's also
                        missing information (which boss? how delayed?)"
 
-        Claude decides: "I'll call check_clarity"
+        LLM decides: "I'll call check_clarity"
 
-        Claude returns: Tool call to check_clarity(message="hey i need...")
+        LLM returns: Tool call to check_clarity(message="hey i need...")
 
         We execute: check_clarity() → Result: "Missing: which boss (name/title),
                                                how long delay, why delayed..."
 
         We add to conversation:
-        - Claude's response (the tool call)
+        - LLM's response (the tool call)
         - The tool result
 
         Iteration 3:
         ───────────
         Claude sees: Original message + tone analysis + clarity analysis + tools
 
-        Claude thinks: "I have good analysis. I understand:
+        LLM thinks: "I have good analysis. I understand:
                        - What's wrong (informal tone, missing details)
                        - How to fix it (be professional, add specifics)
                        I can now compose professional variants."
 
-        Claude decides: "I have enough. Time to compose."
+        LLM decides: "I have enough. Time to compose."
 
-        Claude returns: TEXT (not a tool call) with message variants:
+        LLM returns: TEXT (not a tool call) with message variants:
 
         "Here are three professional versions:
 
@@ -893,7 +893,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         ════════════════════════════════════════════════════════════════════
 
         - conversation: We maintain the full history because Claude learns
-          from context. Each tool result informs Claude's next decision.
+          from context. Each tool result informs LLM's next decision.
 
         - max_iterations: Safety limit prevents infinite loops in case of
           issues. In practice, 3-5 iterations is typical.
@@ -901,7 +901,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         - _execute_tool(): Simulates tool execution. In production, these
           could be real NLP tools, APIs, or specialized agents.
 
-        - _extract_primary() and _extract_variants(): Parse Claude's text
+        - _extract_primary() and _extract_variants(): Parse LLM's text
           output into structured format. Real parsing would be more robust.
 
         Args:
@@ -932,7 +932,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
               Example: ["Alternative 1: ...", "Alternative 2: ..."]
 
             - "reasoning": The agent's full reasoning process (String)
-              Claude's complete thought process and analysis.
+              LLM's complete thought process and analysis.
               Useful for understanding why suggestions were made.
               Shows iterations and reasoning.
 
@@ -984,9 +984,9 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         # Structure:
         # [
         #     {"role": "user", "content": "..."},     # Our initial prompt
-        #     {"role": "assistant", "content": "..."}, # Claude's response
+        #     {"role": "assistant", "content": "..."}, # LLM's response
         #     {"role": "user", "content": "..."},      # Tool result (we add)
-        #     {"role": "assistant", "content": "..."}, # Claude's next decision
+        #     {"role": "assistant", "content": "..."}, # LLM's next decision
         #     ...
         # ]
         #
@@ -1038,10 +1038,10 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         # 4. If text: return answer, exit loop
         #
         # The loop structure enables the adaptive reasoning:
-        # - Claude can call multiple tools
-        # - Claude can call them in any order
-        # - Claude can iterate based on results
-        # - Claude stops when it has enough information
+        # - LLM can call multiple tools
+        # - LLM can call them in any order
+        # - LLM can iterate based on results
+        # - LLM stops when it has enough information
         # ═════════════════════════════════════════════════════════════════
 
         iteration = 0
@@ -1052,10 +1052,10 @@ Use the appropriate tools to gather information, then synthesize your analysis i
             # We pass:
             # - messages: conversation so far
             # - system: system prompt (agent's personality)
-            # - tools: available tools Claude can call
+            # - tools: available tools LLM can call
             # - max_tokens: limit on response length
             #
-            # Claude will respond with either:
+            # LLM will respond with either:
             # - A tool call (wants more info)
             # - Text (has the answer)
             # ───────────────────────────────────────────────────────────
@@ -1069,9 +1069,9 @@ Use the appropriate tools to gather information, then synthesize your analysis i
 
             # Check if Claude wants to use a tool
             # ───────────────────────────────────────────────────────────
-            # Claude's response contains either:
+            # LLM's response contains either:
             # - Tool use blocks (Claude decided to call a tool)
-            # - Text blocks (Claude has the answer)
+            # - Text blocks (LLM has the answer)
             #
             # extract_tool_use() returns dict with name/id/input if tool
             # was called, or None if only text was returned.
@@ -1088,20 +1088,20 @@ Use the appropriate tools to gather information, then synthesize your analysis i
                 # - Query a database (for context)
                 # - Call an external API
                 #
-                # Here, we simulate the results. The key: Claude still
+                # Here, we simulate the results. The key: LLM still
                 # decides WHAT to analyze. We provide the analysis results.
                 # ───────────────────────────────────────────────────────
 
                 tool_result = self._execute_tool(tool_use["name"], tool_use["input"])
 
-                # Step 2b: Add Claude's response and tool result to conversation
+                # Step 2b: Add LLM's response and tool result to conversation
                 # ───────────────────────────────────────────────────────
                 # This is crucial! Claude learns from the tool result.
                 # We add:
-                # 1. Claude's response (with the tool call)
+                # 1. LLM's response (with the tool call)
                 # 2. The tool result (as a user message)
                 #
-                # This structure matches Claude's expectations and enables
+                # This structure matches LLM's expectations and enables
                 # Claude to see what the tool returned.
                 # ───────────────────────────────────────────────────────
 
@@ -1111,17 +1111,17 @@ Use the appropriate tools to gather information, then synthesize your analysis i
 
                 conversation.append({
                     "role": "assistant",
-                    "content": message_content  # Claude's thinking + tool call
+                    "content": message_content  # LLM's thinking + tool call
                 })
 
-                # Add the tool result so Claude can see it
+                # Add the tool result so LLM can see it
                 conversation.append({
                     "role": "user",
                     "content": f"Tool '{tool_use['name']}' result: {tool_result}"
                 })
 
                 # Step 2c: Loop again
-                # Claude will read the tool result and decide next step
+                # LLM will read the tool result and decide next step
                 iteration += 1
 
             else:
@@ -1129,7 +1129,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
                 # ───────────────────────────────────────────────────────
                 # No more tool calls. Claude returned text with the answer.
                 #
-                # extract_text() gets the text content from Claude's response.
+                # extract_text() gets the text content from LLM's response.
                 # This is the synthesized message variants and reasoning.
                 # ───────────────────────────────────────────────────────
 
@@ -1313,7 +1313,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         - Still demonstrate how Claude uses tools
         - Still show how results feed back into reasoning
 
-        The key: Claude still DECIDES what to analyze. We just simulate
+        The key: LLM still DECIDES what to analyze. We just simulate
         the results. This is enough to show the pattern.
 
         PRODUCTION APPROACH:
@@ -1337,7 +1337,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
                 return format_result(current_tone, suggestions)
 
         The architecture remains the same - just replace simulate results
-        with real results. Claude's logic doesn't change!
+        with real results. LLM's logic doesn't change!
 
         Args:
             tool_name: Name of the tool to execute ("analyze_tone", etc.)
@@ -1405,9 +1405,9 @@ Use the appropriate tools to gather information, then synthesize your analysis i
 
     def _extract_primary(self, text: str) -> str:
         """
-        Extract primary (best) message variant from Claude's output.
+        Extract primary (best) message variant from LLM's output.
 
-        Claude returns text with multiple pieces of information:
+        LLM returns text with multiple pieces of information:
         - Analysis and reasoning
         - Multiple message variants
         - Explanations
@@ -1418,7 +1418,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         HOW IT WORKS:
         ════════════════════════════════════════════════════════════════════
 
-        Claude will write something like:
+        LLM will write something like:
 
         "I analyzed your message and found:
         - Tone: Too informal
@@ -1444,7 +1444,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         ════════════════════════════════════════════════════════════════════
 
         For robust extraction, consider:
-        - Parse Claude's response more carefully
+        - Parse LLM's response more carefully
         - Look for explicit markers ("PRIMARY:", "VARIANT 1:", etc.)
         - Use heuristics (longest well-formed paragraph)
         - Validate that results are sensible
@@ -1506,9 +1506,9 @@ Use the appropriate tools to gather information, then synthesize your analysis i
 
     def _extract_variants(self, text: str) -> list:
         """
-        Extract alternative message variants from Claude's output.
+        Extract alternative message variants from LLM's output.
 
-        Claude returns multiple message variants (usually 2-3 alternatives).
+        LLM returns multiple message variants (usually 2-3 alternatives).
         This method extracts these alternatives (not the primary).
 
         WHY ALTERNATIVES:

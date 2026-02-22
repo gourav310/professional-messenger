@@ -347,13 +347,13 @@ def compose(text, show_variants, clipboard, config):
     - pm compose "your message" should work
 
     "CLAUDE_API_KEY not set" error:
-    - Set your API key: export CLAUDE_API_KEY="sk-..."
-    - Get key from: https://console.anthropic.com
+    - Set your API key: export GROQ_API_KEY="gsk-..."
+    - Get key from: https://console.groq.com
 
     "Error during composition" error:
     - Check your API key is valid
     - Check your internet connection
-    - Check Claude API is available
+    - Check Groq API is available
 
     Args:
         text (str, optional): Your unstructured message.

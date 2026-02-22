@@ -7,11 +7,11 @@ agent system. It demonstrates key agent architecture concepts:
 CORE CONCEPTS:
 1. Tools: Represent functions/capabilities agents can invoke to accomplish tasks
 2. Agents: Autonomous systems with identity and tools for reasoning
-3. API Compatibility: Tools and agents serialize to formats Claude understands
+3. API Compatibility: Tools and agents serialize to LLM API formats
 
 DESIGN PHILOSOPHY:
 This module teaches you how to structure AI agents. Rather than directly calling
-Claude, agents use a tool-use pattern where Claude decides what to do and agents
+an LLM, agents use a tool-use pattern where the LLM decides what to do and agents
 execute the decisions. This separation of concerns makes agents:
 - Testable: We can mock tool execution
 - Composable: Agents can have sub-agents
@@ -36,12 +36,12 @@ class Tool:
 
     In agent systems, tools are how agents interact with the world. A tool:
     - Has a name for identification
-    - Has a description so Claude understands what it does
+    - Has a description so the LLM understands what it does
     - Has an input schema describing parameters
     - Optionally has a handler function for execution
 
     This design allows tools to be:
-    1. Declared and sent to Claude for decision-making
+    1. Declared and sent to the LLM for decision-making
     2. Actually executed in Python for real work
     3. Composed into agents with multiple capabilities
 
@@ -208,7 +208,7 @@ class Agent:
     Each agent has:
     - Identity: What it is (name, system prompt)
     - Capabilities: What it can do (tools)
-    - Reasoning: How it decides (via Claude API)
+    - Reasoning: How it decides (via LLM API)
 
     DESIGN BENEFITS:
     - Modularity: Each agent handles one concern
@@ -343,7 +343,7 @@ class Agent:
 
         self.system_prompt = system_prompt
         # Purpose: Instructions for Claude (agent personality)
-        # Usage: Sent to Claude API as system message
+        # Usage: Sent to LLM API as system message
         # Impact: Controls how agent thinks and behaves
 
         self.tools = tools or []
