@@ -68,14 +68,14 @@ class TestToolClass:
         assert callable(tool.handler)
 
     def test_tool_to_claude_format(self):
-        """Tool should be convertible to Claude API format.
+        """Tool should be convertible to Groq API format.
 
-        Claude's API expects tools in a specific JSON schema format.
+        Groq's API expects tools in a specific JSON schema format with type=function wrapper.
         The to_claude_format() method ensures our Tool objects can be
-        serialized for API requests to Claude.
+        serialized for API requests to Groq.
 
         Why this matters:
-        - Claude needs tools as JSON objects with name, description, input_schema
+        - Groq needs tools as JSON objects with type, function.name, function.description, function.parameters
         - This method bridges our Python Tool objects and the API format
         - Allows us to maintain clean Python code while staying API-compatible
         """
@@ -94,11 +94,12 @@ class TestToolClass:
 
         schema = tool.to_claude_format()
 
-        # Verify the schema has all required Claude API fields
-        assert schema["name"] == "summarize"
-        assert schema["description"] == "Summarize text"
-        assert "input_schema" in schema
-        assert schema["input_schema"]["type"] == "object"
+        # Verify the schema has all required Groq API fields
+        assert schema["type"] == "function"
+        assert schema["function"]["name"] == "summarize"
+        assert schema["function"]["description"] == "Summarize text"
+        assert "parameters" in schema["function"]
+        assert schema["function"]["parameters"]["type"] == "object"
 
 
 class TestAgentClass:
@@ -215,14 +216,14 @@ class TestAgentClass:
         assert "clarity" in tool_names
 
     def test_agent_tool_schema_format(self):
-        """Tool schema should be in Claude API format when retrieved.
+        """Tool schema should be in Groq API format when retrieved.
 
-        When we send tools to Claude's API, they must be in the correct format.
+        When we send tools to Groq's API, they must be in the correct format.
         The get_tools_for_api() method converts our Tool objects to the format
-        Claude expects, handling all the serialization details.
+        Groq expects, handling all the serialization details.
 
         Why this matters:
-        - Claude API expects JSON-serializable dictionaries
+        - Groq API expects JSON-serializable dictionaries with type=function wrapper
         - Our Tool objects need transformation before API use
         - This separation keeps our domain code clean and API-aware
         """
@@ -248,9 +249,10 @@ class TestAgentClass:
         api_tools = agent.get_tools_for_api()
 
         assert len(api_tools) == 1
-        assert api_tools[0]["name"] == "summarize"
-        assert api_tools[0]["description"] == "Summarize text"
-        assert "input_schema" in api_tools[0]
+        assert api_tools[0]["type"] == "function"
+        assert api_tools[0]["function"]["name"] == "summarize"
+        assert api_tools[0]["function"]["description"] == "Summarize text"
+        assert "parameters" in api_tools[0]["function"]
 
     def test_agent_get_tools_for_api_empty(self):
         """Agent with no tools should return empty list for API.

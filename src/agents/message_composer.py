@@ -342,16 +342,16 @@ class MessageComposerAgent(Agent):
         - Configuring agent before using
 
         Args:
-            api_key: Anthropic API key. If None, uses CLAUDE_API_KEY env var.
-                    This is how we authenticate with Claude.
-                    Format: starts with "sk-" for Anthropic API keys
-                    Example: "sk-ant-v1-1234567890..."
-                    If not provided, LLMClient will look for CLAUDE_API_KEY
+            api_key: Groq API key. If None, uses GROQ_API_KEY env var.
+                    This is how we authenticate with Groq.
+                    Format: starts with "gsk-" for Groq API keys
+                    Example: "gsk-proj_1234567890..."
+                    If not provided, LLMClient will look for GROQ_API_KEY
                     environment variable.
 
         Raises:
             ValueError: (from LLMClient) If neither api_key parameter nor
-                       CLAUDE_API_KEY environment variable is available.
+                       GROQ_API_KEY environment variable is available.
 
         Example:
             >>> # Using environment variable (recommended for production)
@@ -436,28 +436,28 @@ You're not just analyzing - you're improving."""
         # Initialize the LLM Client
         # ═════════════════════════════════════════════════════════════════
         # The LLMClient is the "translator" between our Python code and
-        # Claude's API. It:
-        # - Manages the Anthropic SDK
-        # - Formats messages for Claude
-        # - Sends requests to Claude
+        # Groq's API. It:
+        # - Manages the Groq SDK
+        # - Formats messages for Groq
+        # - Sends requests to Groq
         # - Parses responses
         # - Extracts tool calls or text answers
         #
         # We store it as self.llm_client so we can use it later in compose()
-        # to communicate with Claude during the reasoning loop.
+        # to communicate with Groq during the reasoning loop.
         #
-        # The api_key (or env var) is passed to LLMClient, which handles
-        # authentication with Anthropic.
+        # The api_key (or GROQ_API_KEY env var) is passed to LLMClient,
+        # which handles authentication with Groq.
         #
-        # We only initialize if api_key is provided explicitly (for testing,
-        # we might skip this or use a mock).
+        # LLMClient will try to find GROQ_API_KEY env var if api_key is None.
         # =================================================================
 
-        if api_key:
+        try:
             self.llm_client = LLMClient(api_key=api_key)
-        else:
-            # If no api_key provided, we'll need one to call compose()
-            # but we allow agent creation for testing tool setup
+        except ValueError:
+            # If initialization fails, set to None
+            # This allows agent creation for testing tool setup,
+            # but compose() will fail with clear error
             self.llm_client = None
         # Store the client for use in compose()
 
@@ -1102,9 +1102,13 @@ Use the appropriate tools to gather information, then synthesize your analysis i
                 # Claude to see what the tool returned.
                 # ───────────────────────────────────────────────────────
 
+                # Extract the assistant's message content from the response
+                # The response object from Groq has message content in response.choices[0].message
+                message_content = response.choices[0].message.content or ""
+
                 conversation.append({
                     "role": "assistant",
-                    "content": response.content  # Claude's thinking + tool call
+                    "content": message_content  # Claude's thinking + tool call
                 })
 
                 # Add the tool result so Claude can see it

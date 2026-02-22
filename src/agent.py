@@ -117,30 +117,33 @@ class Tool:
 
     def to_claude_format(self) -> dict:
         """
-        Convert this Tool to Claude API format.
+        Convert this Tool to Groq API format.
 
         PROBLEM THIS SOLVES:
-        Claude's API has specific requirements for how tools must be formatted
+        Groq's API has specific requirements for how tools must be formatted
         as JSON. This method bridges our Python Tool objects and the API format,
         handling serialization details transparently.
 
         WHY A SEPARATE METHOD:
         - Keeps Tool class focused on Python representation
-        - Makes it clear what format Claude expects
+        - Makes it clear what format Groq expects
         - Allows future formatting changes in one place
         - Enables validation of API format
 
-        WHAT CLAUDE EXPECTS:
-        Claude needs tools as JSON objects with exactly these fields:
+        WHAT GROQ EXPECTS:
+        Groq needs tools as JSON objects with type="function" wrapper:
         {
-            "name": "tool_name",
-            "description": "what it does",
-            "input_schema": { JSON Schema object }
+            "type": "function",
+            "function": {
+                "name": "tool_name",
+                "description": "what it does",
+                "parameters": { JSON Schema object }
+            }
         }
 
         Returns:
-            dict: Tool formatted exactly as Claude API expects.
-                 Keys: "name", "description", "input_schema"
+            dict: Tool formatted exactly as Groq API expects.
+                 Keys: "type", "function" (which contains "name", "description", "parameters")
                  Values are JSON-serializable (can be converted to JSON string)
 
         Raises:
@@ -157,15 +160,20 @@ class Tool:
             ...     }
             ... )
             >>> api_format = tool.to_claude_format()
-            >>> print(api_format["name"])  # Output: summarize
+            >>> print(api_format["type"])  # Output: function
+            >>> print(api_format["function"]["name"])  # Output: summarize
             >>> # Can now JSON-encode: json.dumps(api_format)
         """
-        # Create dict with Claude API format
+        # Create dict with Groq API format
         # Note: We DON'T include handler - that's Python-only, not for API
+        # Groq uses "type": "function" wrapper and "parameters" instead of "input_schema"
         return {
-            "name": self.name,
-            "description": self.description,
-            "input_schema": self.input_schema
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.input_schema
+            }
         }
 
     def __repr__(self) -> str:
@@ -396,11 +404,11 @@ class Agent:
 
     def get_tools_for_api(self) -> list[dict]:
         """
-        Get all tools formatted for Claude API use.
+        Get all tools formatted for Groq API use.
 
         PROBLEM THIS SOLVES:
-        When we send a request to Claude, we need tools in a specific format.
-        This method handles converting our Tool objects to what Claude expects,
+        When we send a request to Groq, we need tools in a specific format.
+        This method handles converting our Tool objects to what Groq expects,
         centralizing serialization logic in one place.
 
         WHY A SEPARATE METHOD:
@@ -410,30 +418,33 @@ class Agent:
         - Enables future transformations (filtering, sorting)
 
         WHAT IT RETURNS:
-        A list of dictionaries in Claude API format:
+        A list of dictionaries in Groq API format:
         [
             {
-                "name": "tool_name",
-                "description": "what it does",
-                "input_schema": { JSON Schema }
+                "type": "function",
+                "function": {
+                    "name": "tool_name",
+                    "description": "what it does",
+                    "parameters": { JSON Schema }
+                }
             },
             ...
         ]
 
         WHEN IT'S USED:
-        When sending requests to Claude's API, we do:
+        When sending requests to Groq's API, we do:
         >>> agent = Agent("Composer", "compose", tools=[...])
-        >>> client.messages.create(
-        ...     model="claude-opus-4-6",
+        >>> client.chat.completions.create(
+        ...     model="llama-3.3-70b-versatile",
         ...     system=agent.system_prompt,
         ...     tools=agent.get_tools_for_api(),  # <-- Used here
         ...     messages=[...]
         ... )
 
         Returns:
-            list[dict]: All tools formatted for Claude API.
+            list[dict]: All tools formatted for Groq API.
                        Empty list if agent has no tools.
-                       Each dict has keys: name, description, input_schema
+                       Each dict has keys: type, function (which contains name, description, parameters)
 
         Example:
             >>> tool1 = Tool("analyze", "Analyze text", {})
@@ -441,7 +452,7 @@ class Agent:
             >>> agent = Agent("Analyzer", "analyze", tools=[tool1, tool2])
             >>> api_tools = agent.get_tools_for_api()
             >>> assert len(api_tools) == 2
-            >>> assert api_tools[0]["name"] == "analyze"
+            >>> assert api_tools[0]["function"]["name"] == "analyze"
             >>> # Can now JSON-serialize: json.dumps(api_tools)
         """
         # Use list comprehension to convert each tool
