@@ -187,7 +187,7 @@ def app():
     First time:
     1. pm config                    # Creates config.yaml
     2. Edit config.yaml             # Customize voice rules
-    3. export CLAUDE_API_KEY="..."  # Set API key
+    3. export GROQ_API_KEY="..."  # Set API key
     4. pm compose "your message"    # Use the tool!
 
     Daily use:
@@ -346,7 +346,7 @@ def compose(text, show_variants, clipboard, config):
     - Make sure you provided text as argument or pasted it interactively
     - pm compose "your message" should work
 
-    "CLAUDE_API_KEY not set" error:
+    "GROQ_API_KEY not set" error:
     - Set your API key: export GROQ_API_KEY="gsk-..."
     - Get key from: https://console.groq.com
 
@@ -475,22 +475,22 @@ def compose(text, show_variants, clipboard, config):
 
     # Get API key
     # ═════════════════════════════════════════════════════════════════════════
-    # MessageComposerAgent needs API key to authenticate with Claude
-    # We look for CLAUDE_API_KEY environment variable
+    # MessageComposerAgent needs API key to authenticate with Groq
+    # We look for GROQ_API_KEY environment variable
     #
     # Environment variable is standard practice:
     # - Never hardcode secrets in code
-    # - User sets: export CLAUDE_API_KEY="sk-..."
-    # - Code reads: os.getenv("CLAUDE_API_KEY")
+    # - User sets: export GROQ_API_KEY="sk-..."
+    # - Code reads: os.getenv("GROQ_API_KEY")
     # - Can be set in .bashrc, .zshrc, .env files
     # ═════════════════════════════════════════════════════════════════════════
 
-    api_key = os.getenv("CLAUDE_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
 
     if not api_key:
         # API key not set - show helpful error message
-        click.echo("❌ Error: CLAUDE_API_KEY not set")
-        click.echo("   Set it: export CLAUDE_API_KEY=your-key-here")
+        click.echo("❌ Error: GROQ_API_KEY not set")
+        click.echo("   Set it: export GROQ_API_KEY=your-key-here")
         # Return exits the command
         return
 
@@ -498,7 +498,7 @@ def compose(text, show_variants, clipboard, config):
     # ═════════════════════════════════════════════════════════════════════════
     # MessageComposerAgent handles:
     # 1. Tool setup (analyze_tone, suggest_structure, check_clarity)
-    # 2. Reasoning loop (Claude decides what analysis needed)
+    # 2. Reasoning loop (LLM decides what analysis needed)
     # 3. Result synthesis (multiple professional variants)
     #
     # The compose() method runs the full reasoning loop:
