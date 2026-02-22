@@ -46,12 +46,12 @@ class LLMClient:
 
     Attributes:
         api_key (str): Groq API key
-        model (str): Model to use (e.g., "llama-3.1-70b-versatile")
+        model (str): Model to use (e.g., "mixtral-8x7b-32768")
         client (Groq): The underlying Groq client
 
     Example:
         Using the client in an agent:
-        >>> client = LLMClient(api_key="gsk-...", model="llama-3.1-70b-versatile")
+        >>> client = LLMClient(api_key="gsk-...", model="mixtral-8x7b-32768")
         >>> response = client.create_message(
         ...     messages=[{"role": "user", "content": "Hello"}],
         ...     system="You are helpful",
@@ -63,7 +63,7 @@ class LLMClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "llama-3.1-70b-versatile"
+        model: str = "mixtral-8x7b-32768"
     ):
         """
         Initialize the LLM client for Groq.

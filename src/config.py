@@ -228,7 +228,7 @@ class Config:
         """
         return {
             "api": {
-                "model": "llama-3.1-70b-versatile"
+                "model": "mixtral-8x7b-32768"
             },
             "voice_rules": {
                 "tone": "professional",
@@ -250,7 +250,7 @@ class Config:
         Rather than config.get("api.model"), you can use config.model.
 
         Returns:
-            str: Model identifier (e.g., "llama-3.1-70b-versatile")
+            str: Model identifier (e.g., "mixtral-8x7b-32768")
 
             The returned value is:
             - From config.yaml if user specified it
@@ -260,13 +260,13 @@ class Config:
         Example:
             >>> config = Config()
             >>> model = config.model
-            >>> print(model)  # "llama-3.1-70b-versatile"
+            >>> print(model)  # "mixtral-8x7b-32768"
 
         Note:
             The model is used when creating the LLMClient
             to communicate with Groq's API.
         """
-        return self.data.get("api", {}).get("model", "llama-3.1-70b-versatile")
+        return self.data.get("api", {}).get("model", "mixtral-8x7b-32768")
 
     @property
     def voice_rules(self) -> dict:
