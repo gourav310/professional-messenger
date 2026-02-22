@@ -48,21 +48,21 @@ class Tool:
     REAL-WORLD EXAMPLE:
     In our Professional Messenger:
     - MessageComposerAgent has tools: analyze_tone, check_grammar, organize_structure
-    - When processing a message, Claude decides which tools to call
+    - When processing a message, the LLM decides which tools to call
     - Our Python code actually executes those tool calls
-    - Results feed back to Claude for iterative improvement
+    - Results feed back to the LLM for iterative improvement
 
     Attributes:
         name (str): Unique identifier for this tool (e.g., "analyze_tone").
                    Should be lowercase with underscores. Used in API calls.
 
         description (str): What this tool does, in human-readable format.
-                          Claude reads this to understand the tool's purpose.
+                          The LLM reads this to understand the tool's purpose.
                           Should be clear and specific about inputs/outputs.
 
         input_schema (dict): JSON Schema defining what parameters the tool accepts.
                             Format: {"type": "object", "properties": {...}}
-                            Claude uses this to generate valid input.
+                            The LLM uses this to generate valid input.
                             See: https://json-schema.org/
 
         handler (Callable, optional): Python function that implements this tool.
@@ -102,11 +102,11 @@ class Tool:
     # Must be lowercase with underscores for API compatibility (snake_case)
 
     description: str
-    # Why description is str: Claude reads this to understand tool purpose
-    # Should be detailed enough that Claude knows when/how to use it
+    # Why description is str: The LLM reads this to understand tool purpose
+    # Should be detailed enough that the LLM knows when/how to use it
 
     input_schema: dict
-    # Why input_schema is dict: JSON Schema format Claude expects
+    # Why input_schema is dict: JSON Schema format the LLM expects
     # Defines structure of arguments the tool accepts
     # Examples: {"type": "object", "properties": {...}, "required": [...]}
 
@@ -219,9 +219,9 @@ class Agent:
     REAL-WORLD FLOW:
     1. User gives MessageComposerAgent raw thoughts
     2. Agent thinks about the task (consulting system_prompt)
-    3. Claude decides which tools to use (based on available tools)
+    3. The LLM decides which tools to use (based on available tools)
     4. Agent calls those tools (through handlers)
-    5. Results feed back to Claude for refinement
+    5. Results feed back to the LLM for refinement
     6. Iterate until satisfied, return polished message
 
     Example - Professional Message Composition:
@@ -248,16 +248,16 @@ class Agent:
                    Examples: "MessageComposer", "ToneAnalyzer", "GrammarChecker"
                    Used for identification and debugging.
 
-        system_prompt (str): Instructions telling Claude how to behave.
+        system_prompt (str): Instructions telling the LLM how to behave.
                             Acts like the agent's personality and guidelines.
-                            Claude will follow these instructions when using
+                            The LLM will follow these instructions when using
                             this agent. Should be detailed and specific.
                             Examples:
                             - "You compose professional emails..."
                             - "You analyze text tone to detect..."
 
         tools (list[Tool]): Capabilities this agent can access.
-                           Each tool is a function/capability Claude can use.
+                           Each tool is a function/capability the LLM can use.
                            Empty list means agent can only think, not act.
                            Tools are consulted in order (though order rarely matters).
 
@@ -280,7 +280,7 @@ class Agent:
         With tools:
         - Agent can research, analyze, plan, execute
         - Tool use creates the iterative loop
-        - Claude chooses which tools to use (not us)
+        - The LLM chooses which tools to use (not us)
 
     Name:
         The name identifies this agent instance. Useful for:
@@ -305,7 +305,7 @@ class Agent:
 
         WHY THESE PARAMETERS:
         - name: Identifies the agent in logs and code
-        - system_prompt: Instructions Claude follows (the agent's personality)
+        - system_prompt: Instructions the LLM follows (the agent's personality)
         - tools: Capabilities available to the agent
 
         Args:
@@ -313,7 +313,7 @@ class Agent:
                        Examples: "ToneAnalyzer", "MessageComposer"
                        Should be descriptive of the agent's role.
 
-            system_prompt (str): Instructions for Claude.
+            system_prompt (str): Instructions for the LLM.
                                 Examples:
                                 "You are a tone analyzer. Classify text as..."
                                 "You are a message composer. Polish and improve..."
@@ -342,13 +342,13 @@ class Agent:
         # Usage: Logging, configuration, debugging
 
         self.system_prompt = system_prompt
-        # Purpose: Instructions for Claude (agent personality)
+        # Purpose: Instructions for the LLM (agent personality)
         # Usage: Sent to LLM API as system message
         # Impact: Controls how agent thinks and behaves
 
         self.tools = tools or []
         # Purpose: Tools the agent can invoke
-        # Usage: Sent to Claude to enable tool use
+        # Usage: Sent to the LLM to enable tool use
         # Design: Default to empty list if None provided
 
     def add_tool(self, tool: Tool) -> None:

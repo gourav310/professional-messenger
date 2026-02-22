@@ -44,7 +44,7 @@ def test_message_composer_has_required_tools():
     - suggest_structure: for organizing information
     - check_clarity: for identifying ambiguities
 
-    These tools enable the reasoning loop where Claude
+    These tools enable the reasoning loop where the LLM
     analyzes the message from multiple perspectives.
     """
     agent = MessageComposerAgent(api_key=None)

@@ -237,8 +237,8 @@ def compose(text, show_variants, clipboard, config):
     ═════════════════════════════════════════════════════════════════════════
 
     1. Takes your unstructured input
-    2. Sends it to Claude via MessageComposerAgent
-    3. Claude analyzes tone, structure, clarity
+    2. Sends it to the LLM via MessageComposerAgent
+    3. The LLM analyzes tone, structure, clarity
     4. Returns 2-3 professional variants
     5. Copies the best one to your clipboard
 
@@ -255,9 +255,9 @@ def compose(text, show_variants, clipboard, config):
        This has clarity issues (which boss? when?)
        Let me analyze these..."
 
-      Claude calls: analyze_tone(text="...")
-      Claude calls: check_clarity(message="...")
-      Claude synthesizes: "Here are professional versions..."
+      LLM calls: analyze_tone(text="...")
+      LLM calls: check_clarity(message="...")
+      LLM synthesizes: "Here are professional versions..."
 
     Output: Multiple polished options
 
@@ -502,10 +502,10 @@ def compose(text, show_variants, clipboard, config):
     # 3. Result synthesis (multiple professional variants)
     #
     # The compose() method runs the full reasoning loop:
-    # - Sends input to Claude
-    # - Claude calls tools as needed
+    # - Sends input to the LLM
+    # - LLM calls tools as needed
     # - Tools return analysis
-    # - Claude synthesizes results
+    # - LLM synthesizes results
     # - Returns primary + variants
     # ═════════════════════════════════════════════════════════════════════════
 
@@ -528,7 +528,7 @@ def compose(text, show_variants, clipboard, config):
     # ═════════════════════════════════════════════════════════════════════════
 
     # Show primary message
-    # The "best" version according to Claude
+    # The "best" version according to the LLM
     click.echo("\n✨ Composed Message:\n")
     click.echo(f"   {result['primary']}\n")
 
@@ -600,7 +600,7 @@ def config():
     config.yaml is a YAML file with sections:
 
     api:
-      model: claude-3-5-haiku-20241022  # Which Claude model
+      model: llama-3.3-70b-versatile    # Which LLM model
       max_tokens: 2048                   # Token limit
 
     voice_rules:
@@ -654,7 +654,7 @@ def config():
          casual_request: "Hey, would you be able to..."
          formal_email: "I am writing to inform you..."
 
-       Then Claude uses these as style references!
+       Then the LLM uses these as style references!
 
     5. Save and run: pm compose "text"
        Now it uses YOUR configuration

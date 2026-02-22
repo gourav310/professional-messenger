@@ -5,7 +5,7 @@ This file demonstrates the core pattern of how an agent works using pseudocode.
 It's educational - it shows the logic and flow without actual API calls.
 
 The key concept: An agent runs a loop where it repeatedly:
-1. Sends its current state to Claude
+1. Sends its current state to the LLM
 2. Receives a decision (use a tool or return answer)
 3. If using a tool: executes it and loops again
 4. If done: returns the answer
@@ -27,14 +27,14 @@ def agent_loop(user_input: str, tools: list) -> str:
 
     Args:
         user_input: The initial user message (e.g., "Write a professional email")
-        tools: List of tools Claude can choose to use
+        tools: List of tools the LLM can choose to use
 
     Returns:
-        The final text response from Claude
+        The final text response from the LLM
 
     The Loop:
         This function repeatedly:
-        - Sends conversation history to Claude
+        - Sends conversation history to the LLM
         - Gets back either a tool use or final answer
         - If tool use: executes it and adds result to history
         - If final answer: returns it and stops
@@ -43,7 +43,7 @@ def agent_loop(user_input: str, tools: list) -> str:
     # Step 1: Initialize conversation history
     # This is a list of all messages exchanged in this agent session.
     # Each message is a dict with "role" (user/assistant) and "content".
-    # Claude will use this entire history when deciding what to do.
+    # The LLM will use this entire history when deciding what to do.
     conversation = []
 
     # Step 2: Add initial user message
@@ -57,31 +57,31 @@ def agent_loop(user_input: str, tools: list) -> str:
     print(f"  Conversation length: {len(conversation)}")
 
     # Step 3: Main reasoning loop
-    # This loop continues until Claude decides to stop (no tool use).
+    # This loop continues until the LLM decides to stop (no tool use).
     iteration = 0
     max_iterations = 10  # Safety limit to prevent infinite loops
 
     while iteration < max_iterations:
         iteration += 1
         print(f"\n{'='*70}")
-        print(f"ITERATION {iteration}: SEND TO CLAUDE")
+        print(f"ITERATION {iteration}: SEND TO LLM")
         print(f"{'='*70}")
 
-        # Step 3a: Call Claude with the conversation and available tools
+        # Step 3a: Call the LLM with the conversation and available tools
         # In production, this would be:
         #   response = client.messages.create(
-        #       model="claude-3-5-haiku-20241022",
+        #       model="llama-3.3-70b-versatile",
         #       max_tokens=1024,
         #       tools=tools,
         #       messages=conversation
         #   )
         #
-        # Claude sees:
+        # The LLM sees:
         # - The entire conversation history (all previous messages and results)
         # - The list of available tools with descriptions
         # - The current context (what's been decided so far)
         #
-        # Claude returns a response that includes:
+        # The LLM returns a response that includes:
         # - stop_reason: Either "tool_use" or "end_turn"
         # - content: Text and/or tool use blocks
 
@@ -91,22 +91,22 @@ def agent_loop(user_input: str, tools: list) -> str:
         print(f"  Available tools: {len(tools)} tools")
         print(f"  Tools: {[t['name'] for t in tools]}")
 
-        # FOR THIS EXAMPLE: Simulate Claude's response
+        # FOR THIS EXAMPLE: Simulate LLM's response
         # (In real code, this would call the actual API)
-        response = simulate_claude_response(conversation, tools)
+        response = simulate_llm_response(conversation, tools)
 
-        # Step 3b: Analyze Claude's response
-        print(f"\n[CLAUDE'S RESPONSE]")
+        # Step 3b: Analyze LLM's response
+        print(f"\n[LLM'S RESPONSE]")
         print(f"  Stop reason: {response['stop_reason']}")
 
-        # Step 3c: Decision point - did Claude choose to use a tool?
+        # Step 3c: Decision point - did the LLM choose to use a tool?
         if response['stop_reason'] == "tool_use":
             # ================================================================
-            # PATH A: Claude chose to use a tool
+            # PATH A: LLM chose to use a tool
             # ================================================================
-            print(f"\n[DECISION] Claude is using a tool (not done yet)")
+            print(f"\n[DECISION] LLM is using a tool (not done yet)")
 
-            # Step 3c-i: Extract the tool Claude chose to use
+            # Step 3c-i: Extract the tool the LLM chose to use
             tool_use_block = response['tool_use']
             tool_name = tool_use_block['name']
             tool_input = tool_use_block['input']
@@ -114,9 +114,9 @@ def agent_loop(user_input: str, tools: list) -> str:
             print(f"  Tool chosen: {tool_name}")
             print(f"  Tool input: {tool_input}")
 
-            # Step 3c-ii: Add Claude's response to conversation
-            # We save what Claude said/decided so it stays in context.
-            # Claude's response includes the decision to use a tool.
+            # Step 3c-ii: Add LLM's response to conversation
+            # We save what the LLM said/decided so it stays in context.
+            # LLM's response includes the decision to use a tool.
             conversation.append({
                 "role": "assistant",
                 "content": response['content']
@@ -126,13 +126,13 @@ def agent_loop(user_input: str, tools: list) -> str:
 
             # Step 3c-iii: Execute the tool
             # This is where the agent actually DOES something (not just thinks).
-            # We run the tool function with the parameters Claude provided.
+            # We run the tool function with the parameters the LLM provided.
             print(f"\n[EXECUTING TOOL: {tool_name}]")
             tool_result = execute_tool(tool_name, tool_input)
             print(f"  Tool result: {tool_result}")
 
             # Step 3c-iv: Add tool result to conversation
-            # Claude will see this result in the next loop iteration.
+            # The LLM will see this result in the next loop iteration.
             # It will then decide what to do next based on this new information.
             conversation.append({
                 "role": "user",
@@ -144,19 +144,19 @@ def agent_loop(user_input: str, tools: list) -> str:
 
             # Step 3c-v: Loop continues
             # Go back to the top of the while loop.
-            # Claude will now have more information and can make a better decision.
+            # The LLM will now have more information and can make a better decision.
             print(f"\n[LOOP CONTINUES]")
-            print(f"  Sending updated conversation to Claude...")
+            print(f"  Sending updated conversation to LLM...")
             continue
 
         else:
             # ================================================================
-            # PATH B: Claude is done - no tool use, just returning answer
+            # PATH B: LLM is done - no tool use, just returning answer
             # ================================================================
-            print(f"\n[DECISION] Claude is done (stop_reason == 'end_turn')")
+            print(f"\n[DECISION] LLM is done (stop_reason == 'end_turn')")
 
             # Step 3d-i: Extract the final text response
-            # Claude has analyzed everything and reached a conclusion.
+            # The LLM has analyzed everything and reached a conclusion.
             final_response = response['final_text']
 
             print(f"\n[FINAL RESPONSE FROM CLAUDE]")
@@ -179,13 +179,13 @@ def agent_loop(user_input: str, tools: list) -> str:
 # SIMULATION FUNCTIONS (for educational pseudocode)
 # ============================================================================
 
-def simulate_claude_response(conversation: list, tools: list) -> dict:
+def simulate_llm_response(conversation: list, tools: list) -> dict:
     """
-    SIMULATION ONLY: Pretends to be Claude's API response.
+    SIMULATION ONLY: Pretends to be LLM's API response.
 
     In real code, this would be:
         client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model="llama-3.3-70b-versatile",
             max_tokens=1024,
             tools=tools,
             messages=conversation
@@ -195,12 +195,12 @@ def simulate_claude_response(conversation: list, tools: list) -> dict:
     how the loop handles both "use tool" and "done" scenarios.
     """
 
-    # This is just for demonstration - showing what Claude might return
-    # In a real agent, Claude would actually analyze the conversation
+    # This is just for demonstration - showing what the LLM might return
+    # In a real agent, the LLM would actually analyze the conversation
     # and decide intelligently what to do
 
     if len(conversation) == 1:
-        # First iteration: Claude decides to use a tool
+        # First iteration: LLM decides to use a tool
         return {
             "stop_reason": "tool_use",
             "content": "I'll analyze the tone of your message first.",
@@ -212,7 +212,7 @@ def simulate_claude_response(conversation: list, tools: list) -> dict:
             }
         }
     else:
-        # Second or later iteration: Claude has enough information
+        # Second or later iteration: LLM has enough information
         return {
             "stop_reason": "end_turn",
             "content": "Now I have all the information I need.",
@@ -360,23 +360,23 @@ WHY THIS PATTERN IS POWERFUL:
 WHAT HAPPENS IN EACH ITERATION:
 
 Iteration 1:
-  - Claude sees: Original user message
-  - Claude thinks: "I need more context about tone"
-  - Claude decides: Use analyze_tone tool
+  - LLM sees: Original user message
+  - LLM thinks: "I need more context about tone"
+  - LLM decides: Use analyze_tone tool
   - Result: Tone analysis
 
 Iteration 2:
-  - Claude sees: Original message + tone analysis
-  - Claude thinks: "Good, now I understand the tone to use"
-  - Claude thinks: "Should I structure the message? Let me organize it"
-  - Claude decides: Use structure_organizer tool
+  - LLM sees: Original message + tone analysis
+  - LLM thinks: "Good, now I understand the tone to use"
+  - LLM thinks: "Should I structure the message? Let me organize it"
+  - LLM decides: Use structure_organizer tool
   - Result: Structure suggestions
 
 Iteration 3:
-  - Claude sees: Original message + tone + structure
-  - Claude thinks: "I have all the info. Let me write the final message"
-  - Claude decides: No more tools needed
-  - Claude returns: Final professional message
+  - LLM sees: Original message + tone + structure
+  - LLM thinks: "I have all the info. Let me write the final message"
+  - LLM decides: No more tools needed
+  - LLM returns: Final professional message
 
 THE CONVERSATION HISTORY:
 
@@ -389,7 +389,7 @@ Throughout the loop, the conversation grows:
 [5] User: "Tool result: Structure suggestions..."
 [6] Assistant: "Here's your professional message..."
 
-Claude can see ALL of this when making decisions.
+The LLM can see ALL of this when making decisions.
 Each response is informed by everything that came before.
 This is the power of the reasoning loop.
 """

@@ -21,7 +21,7 @@ Phase 1: Agent Fundamentals (Tasks 1-6)
 ├─ Project setup & environment
 ├─ Agent fundamentals research
 ├─ Agent & Tool base classes
-├─ LLM client wrapper (Claude API)
+├─ LLM client wrapper (Groq API)
 ├─ MessageComposerAgent (core agent)
 └─ Reasoning loop implementation
 
@@ -63,7 +63,7 @@ MessageComposerAgent (Orchestrator)
     ├─ StructureOrganizer (Subagent)
     └─ ClarityEnhancer (Subagent)
     ↓
-Claude API
+Groq API (llama-3.3-70b-versatile)
     ↓
 Multiple Polished Variants
     ↓
@@ -80,7 +80,7 @@ User Feedback → Learning → Next Composition (Improved)
 | **Tool** | Functions agents can call |
 | **MessageComposerAgent** | Primary orchestrating agent |
 | **Subagents** | Specialized agents (Tone, Structure, Clarity) |
-| **LLMClient** | Wrapper around Claude API |
+| **LLMClient** | Wrapper around Groq API |
 | **CLI** | Terminal interface (Click) |
 | **Config** | YAML-based voice rules and preferences |
 | **FeedbackCollector** | Captures user choices and reasons |
@@ -166,7 +166,7 @@ professional-messenger/
 │
 ├── src/
 │   ├── agent.py              # Agent & Tool base classes
-│   ├── llm_client.py         # Claude API wrapper
+│   ├── llm_client.py         # Groq API wrapper
 │   ├── config.py             # Configuration system
 │   ├── cli.py                # CLI interface
 │   ├── formatter.py          # Output formatting

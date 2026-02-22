@@ -8,7 +8,7 @@ follow a test-driven development (TDD) approach to guide implementation.
 The tests cover:
 - Agent initialization with name, system prompt, and tools
 - Tool registration and management
-- Tool schema format compatibility with Claude API
+- Tool schema format compatibility with LLM API
 - Serialization for API communication
 
 Tests are designed to be educational, showing how agent systems are
@@ -26,7 +26,7 @@ class TestToolClass:
         """Tool should initialize with name, description, and input schema.
 
         A Tool represents a function or capability that an agent can invoke.
-        It requires a name for identification, description for Claude to understand
+        It requires a name for identification, description for the LLM to understand
         its purpose, and an input_schema defining the parameters it accepts.
 
         Example:
@@ -50,7 +50,7 @@ class TestToolClass:
         """Tool can optionally include a handler function for execution.
 
         The handler is a Python callable that implements the tool's logic.
-        This allows tools to be both described for Claude API use AND
+        This allows tools to be both described for LLM API use AND
         actually executed within the Python application.
         """
         def my_handler(text: str) -> str:
