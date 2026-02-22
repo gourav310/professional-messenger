@@ -1167,13 +1167,61 @@ Use the appropriate tools to gather information, then synthesize your analysis i
             "reasoning": "Generated professional variants using agent analysis"
         }
 
+    def _extract_date_details(self, text: str) -> str:
+        """
+        Extract date-related information from the message.
+
+        Looks for patterns like:
+        - "4th march wednesday"
+        - "march 4th"
+        - "wednesday"
+        - "next week"
+        - Specific dates in various formats
+
+        Args:
+            text: The message text to extract dates from
+
+        Returns:
+            str: Extracted date string, or empty string if no date found
+        """
+        import re
+
+        # Pattern 1: "4th march wednesday" or similar
+        pattern1 = r'\b(\d{1,2}(?:st|nd|rd|th)\s+\w+\s+\w+day|\d{1,2}(?:st|nd|rd|th)\s+\w+)\b'
+        match = re.search(pattern1, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        # Pattern 2: Just day of week
+        days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        for day in days:
+            if day in text.lower():
+                # Look for date before the day
+                pattern2 = rf'\b(\d{{1,2}}(?:st|nd|rd|th)\s+\w+)\s+{day}'
+                match = re.search(pattern2, text, re.IGNORECASE)
+                if match:
+                    return match.group(1) + f" {day.capitalize()}"
+                else:
+                    return day.capitalize()
+
+        # Pattern 3: "march 4" or similar
+        months = ['january', 'february', 'march', 'april', 'may', 'june',
+                  'july', 'august', 'september', 'october', 'november', 'december']
+        for month in months:
+            pattern3 = rf'{month}\s+(\d{{1,2}}(?:st|nd|rd|th)?|\d{{1,2}})'
+            match = re.search(pattern3, text, re.IGNORECASE)
+            if match:
+                return month.capitalize() + " " + match.group(1)
+
+        return ""
+
     def _generate_fallback_variants(self, user_input: str) -> dict:
         """
         Generate professional message variants as a fallback when iteration limit is reached.
 
         This analyzes the user's input to generate contextually relevant professional variants.
-        It identifies key topics (leave, deadline, urgent, etc.) and generates appropriate
-        responses for business communication.
+        It identifies key topics (leave, deadline, urgent, etc.) and extracts specific details
+        like dates to create personalized responses for business communication.
 
         Args:
             user_input: The original message from the user
@@ -1184,19 +1232,27 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         # Analyze the input to identify context
         input_lower = user_input.lower()
 
+        # Extract specific details from the message
+        date_details = self._extract_date_details(user_input)
+
         # Detect common message patterns
         is_leave_notice = any(word in input_lower for word in ["leave", "off", "vacation", "absent"])
         is_urgent = "urgent" in input_lower
-        is_deadline = any(word in input_lower for word in ["deadline", "due", "deadline", "rush"])
+        is_deadline = any(word in input_lower for word in ["deadline", "due", "rush"])
         is_delay = any(word in input_lower for word in ["delay", "delayed", "postpone", "reschedule"])
         is_apology = any(word in input_lower for word in ["sorry", "apologize", "my fault", "mistake"])
 
         # Generate variants based on detected patterns
         if is_leave_notice:
-            primary = "I wanted to inform you that I will be on leave. Please feel free to reach out if you need anything urgent, and I will be available to assist."
+            # Build message with date if available
+            date_clause = f"on {date_details}" if date_details else "for a period"
+            availability = " I will be available to assist with any urgent matters." if is_urgent else ""
+
+            primary = f"I wanted to inform you that I will be on leave {date_clause}. Please feel free to reach out if you need anything, and{availability}" if is_urgent else f"I wanted to inform you that I will be on leave {date_clause}. Should you have any critical matters, please don't hesitate to contact me."
+
             variants = [
-                "I will be taking leave. Should you have any pressing matters, I remain available for urgent issues.",
-                "I will be away during this period. For any urgent matters, please don't hesitate to contact me."
+                f"I will be taking leave {date_clause}. Should you have any pressing matters, I remain available for urgent issues.",
+                f"I will be away {date_clause}. For any urgent matters, please don't hesitate to contact me."
             ]
         elif is_delay:
             primary = "I wanted to inform you that there will be a delay. We are working on a revised timeline and will update you with more details soon."
