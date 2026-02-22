@@ -112,6 +112,7 @@ import click
 from pathlib import Path
 from .config import Config
 from .agents.message_composer import MessageComposerAgent
+from .agents.simple_composer import SimpleComposer
 
 
 @click.group()
@@ -226,7 +227,9 @@ def app():
 @click.option('--show-variants', is_flag=True, help='Show all message variants')
 @click.option('--clipboard', is_flag=True, default=True, help='Copy best variant to clipboard')
 @click.option('--config', help='Path to custom config.yaml file')
-def compose(text, show_variants, clipboard, config):
+@click.option('--mode', default='simple', type=click.Choice(['simple', 'agent']),
+              help='simple: single LLM call (fast). agent: reasoning loop with tools (thorough).')
+def compose(text, show_variants, clipboard, config, mode):
     """
     Compose a professional message from unstructured thoughts.
 
@@ -471,7 +474,7 @@ def compose(text, show_variants, clipboard, config):
     # Show a spinner/indicator so user knows something is happening
     # ═════════════════════════════════════════════════════════════════════════
 
-    click.echo("🤖 Composing message...")
+    click.echo(f"🤖 Composing message... [mode: {mode}]")
 
     # Get API key
     # ═════════════════════════════════════════════════════════════════════════
@@ -496,22 +499,27 @@ def compose(text, show_variants, clipboard, config):
 
     # Create agent and compose
     # ═════════════════════════════════════════════════════════════════════════
-    # MessageComposerAgent handles:
-    # 1. Tool setup (analyze_tone, suggest_structure, check_clarity)
-    # 2. Reasoning loop (LLM decides what analysis needed)
-    # 3. Result synthesis (multiple professional variants)
+    # Route to appropriate composer based on mode:
     #
-    # The compose() method runs the full reasoning loop:
-    # - Sends input to the LLM
-    # - LLM calls tools as needed
-    # - Tools return analysis
-    # - LLM synthesizes results
-    # - Returns primary + variants
+    # MessageComposerAgent (mode='agent'):
+    # - Handles tool setup (analyze_tone, suggest_structure, check_clarity)
+    # - Uses reasoning loop (LLM decides what analysis needed)
+    # - More thorough, multiple API calls, 1-3 seconds
+    #
+    # SimpleComposer (mode='simple'):
+    # - Single LLM call with comprehensive system prompt
+    # - No tools, no reasoning loop
+    # - Faster, cheaper, 500-800ms
+    #
+    # Both return same output contract: {primary, variants, reasoning}
     # ═════════════════════════════════════════════════════════════════════════
 
     try:
-        # Create agent with API key
-        agent = MessageComposerAgent(api_key=api_key)
+        # Route to appropriate composer
+        if mode == 'agent':
+            agent = MessageComposerAgent(api_key=api_key)
+        else:
+            agent = SimpleComposer(api_key=api_key)
 
         # Run composition - this is the main work
         result = agent.compose(text)
