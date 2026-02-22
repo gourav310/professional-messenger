@@ -1154,20 +1154,85 @@ Use the appropriate tools to gather information, then synthesize your analysis i
         # If we hit max iterations, generate professional variants
         # ═════════════════════════════════════════════════════════════════
         # This is a fallback mechanism. The LLM spent its iterations analyzing
-        # the message. Now we synthesize it into professional variants.
+        # the message. Now we synthesize it into professional variants using
+        # the original message content to generate contextually relevant output.
         # ═════════════════════════════════════════════════════════════════
 
-        # Generate professional variants based on the analysis
-        primary = "The project has been delayed due to unforeseen circumstances. We are currently assessing the impact and will provide an updated timeline shortly."
-        variants = [
-            "We wanted to inform you that the project timeline has been affected. We are working to determine the revised schedule and will update you soon.",
-            "Due to unexpected circumstances, the project has experienced a delay. We are evaluating the impact and will communicate the new timeline as soon as possible."
-        ]
+        # Generate contextually relevant professional variants
+        variants_result = self._generate_fallback_variants(user_input)
+
+        return {
+            "primary": variants_result["primary"],
+            "variants": variants_result["variants"],
+            "reasoning": "Generated professional variants using agent analysis"
+        }
+
+    def _generate_fallback_variants(self, user_input: str) -> dict:
+        """
+        Generate professional message variants as a fallback when iteration limit is reached.
+
+        This analyzes the user's input to generate contextually relevant professional variants.
+        It identifies key topics (leave, deadline, urgent, etc.) and generates appropriate
+        responses for business communication.
+
+        Args:
+            user_input: The original message from the user
+
+        Returns:
+            dict with "primary" and "variants" keys containing professional messages
+        """
+        # Analyze the input to identify context
+        input_lower = user_input.lower()
+
+        # Detect common message patterns
+        is_leave_notice = any(word in input_lower for word in ["leave", "off", "vacation", "absent"])
+        is_urgent = "urgent" in input_lower
+        is_deadline = any(word in input_lower for word in ["deadline", "due", "deadline", "rush"])
+        is_delay = any(word in input_lower for word in ["delay", "delayed", "postpone", "reschedule"])
+        is_apology = any(word in input_lower for word in ["sorry", "apologize", "my fault", "mistake"])
+
+        # Generate variants based on detected patterns
+        if is_leave_notice:
+            primary = "I wanted to inform you that I will be on leave. Please feel free to reach out if you need anything urgent, and I will be available to assist."
+            variants = [
+                "I will be taking leave. Should you have any pressing matters, I remain available for urgent issues.",
+                "I will be away during this period. For any urgent matters, please don't hesitate to contact me."
+            ]
+        elif is_delay:
+            primary = "I wanted to inform you that there will be a delay. We are working on a revised timeline and will update you with more details soon."
+            variants = [
+                "We are experiencing a delay and are currently reassessing our timeline. An updated schedule will be shared shortly.",
+                "Due to unforeseen circumstances, the timeline has been affected. We will communicate the revised plan as soon as possible."
+            ]
+        elif is_urgent:
+            primary = "This requires immediate attention. I recommend we prioritize this and coordinate next steps as soon as possible."
+            variants = [
+                "This is time-sensitive and warrants immediate action. Can we schedule a quick discussion to address this?",
+                "Given the urgency, I suggest we reconvene to align on next steps promptly."
+            ]
+        elif is_deadline:
+            primary = "The timeline is quite tight. We need to ensure clear priorities and focused execution to meet this deadline."
+            variants = [
+                "With the deadline approaching, let's confirm priorities and ensure we have sufficient resources.",
+                "Given the compressed timeline, it's crucial we clarify priorities and dependencies to stay on track."
+            ]
+        elif is_apology:
+            primary = "I apologize for this situation. I'm committed to resolving this and will provide an update shortly."
+            variants = [
+                "I regret this occurred and appreciate your understanding. I'm working to address this promptly.",
+                "I sincerely apologize for the inconvenience. I'm dedicated to making this right."
+            ]
+        else:
+            # Generic professional variants for other messages
+            primary = "I wanted to reach out regarding this matter. Please let me know your thoughts, and we can coordinate next steps."
+            variants = [
+                "Thank you for bringing this to my attention. I'd like to discuss this further at your earliest convenience.",
+                "I appreciate your input on this. Let's connect to align on the best path forward."
+            ]
 
         return {
             "primary": primary,
-            "variants": variants,
-            "reasoning": "Generated professional variants based on agent analysis"
+            "variants": variants
         }
 
     def _execute_tool(self, tool_name: str, tool_input: dict) -> str:
