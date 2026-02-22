@@ -1,12 +1,118 @@
+# Professional Messenger Configuration Example
+# Customize this file for your communication style
+
+# QUICK START:
+# 1. Copy this file: cp config.yaml.example config.yaml
+# 2. Edit config.yaml with your preferences
+# 3. Use it: pm compose "your message"
+
 api:
-  key: ${GROQ_API_KEY}
-  model: llama-3.3-70b-versatile
+  # LLM configuration
+  # Note: GROQ_API_KEY is read from environment variable
+  model: llama-3.3-70b-versatile    # Groq model to use
+  max_tokens: 2048                  # Max response length
 
 voice_rules:
-  tone: professional
-  formality: medium
+  # Communication style preferences
+  tone: professional_balanced       # professional, casual, friendly, professional_balanced
+  formality: low                    # low, medium, high
+
+  # Words/phrases to avoid
+  avoid_words:
+    - "like"
+    - "gonna"
+    - "wanna"
+    - "kinda"
+    - "just"
+    - "actually"
+    - "um"
+    - "uh"
+
+  # Preferred expressions
+  key_phrases:
+    - "we can"
+    - "let's work together"
+    - "I appreciate"
+    - "Looking forward to"
+    - "great opportunity"
+    - "happy to help"
+
+  # Style preferences
+  style_preferences:
+    emphasize_collaboration: true   # Use "we", "let's", "together"
+    emphasize_clarity: true         # Prioritize clarity over formality
+    confidence_level: high          # Sound confident, avoid hedging
+    use_action_verbs: true          # Will, implement, deliver
 
 output:
-  num_variants: 2
-  include_explanations: true
-  copy_to_clipboard: true
+  # Output preferences
+  num_variants: 3                   # Number of alternatives (1, 2, or 3)
+  include_explanations: false       # Show why message was improved
+  copy_to_clipboard: interactive    # true, false, or "interactive" (ask which to copy)
+  show_primary_first: true          # Show best variant first
+  variant_labels: true              # Label variants (Formal, Casual, Direct)
+
+# ===================================================================
+# TONE OPTIONS EXPLAINED
+# ===================================================================
+# professional: Formal, structured, corporate language
+# casual: Relaxed, informal, friendly language
+# friendly: Warm, personable, approachable
+# professional_balanced: Professional but approachable (recommended)
+
+# ===================================================================
+# FORMALITY LEVELS
+# ===================================================================
+# high: Respect hierarchy, use titles, formal structures
+# medium: Professional but conversational
+# low: Casual but still professional (recommended for general use)
+
+# ===================================================================
+# USE CASE EXAMPLES
+# ===================================================================
+
+# Example 1: Mixed professional communication (RECOMMENDED)
+# tone: professional_balanced
+# formality: low
+# num_variants: 3
+# Use for: General work emails, updates, requests, leave notices
+
+# Example 2: Formal client communication
+# tone: professional
+# formality: high
+# num_variants: 1
+# Use for: Client emails, formal proposals, executive communication
+
+# Example 3: Casual team communication
+# tone: friendly
+# formality: low
+# num_variants: 2
+# Use for: Team messages, informal updates, peer communication
+
+# ===================================================================
+# SAMPLE TRANSFORMATIONS WITH RECOMMENDED CONFIG
+# ===================================================================
+
+# Input: "hey boss, project got delayed"
+# Output: "I wanted to inform you that we've encountered a delay in
+#          the project timeline. Let's discuss how we can address this."
+
+# Input: "i'm exhausted, need a day off"
+# Output: "I wanted to inform you that I will be taking a personal day
+#          to rest and recharge. Should you need anything urgent, please
+#          let me know."
+
+# Input: "we finished the api work"
+# Output: "Great news! We've successfully completed the API implementation.
+#          We're ready to move forward with the integration phase."
+
+# ===================================================================
+# TIPS
+# ===================================================================
+# - Start with professional_balanced + low formality for most situations
+# - Increase formality for client/executive communication
+# - Adjust key_phrases to match your company's culture
+# - Remove avoid_words that don't bother you
+# - Set copy_to_clipboard: true if you always want auto-copy
+# - Use include_explanations: true if learning about improvements
+# - Try num_variants: 3 for important decisions, 1 for quick messages
