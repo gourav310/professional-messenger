@@ -2,6 +2,76 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Installation
+
+Professional Messenger is installed as a Python package, providing the `pm` command for use in your terminal.
+
+### Installation Steps
+
+1. **Clone the repository** (if not already done):
+   ```bash
+   git clone <repository-url>
+   cd professional-messenger
+   ```
+
+2. **Install in development mode**:
+   ```bash
+   pip install -e .
+   ```
+
+   This installs the package and makes the `pm` command available in your terminal.
+
+3. **Set your Groq API key**:
+   ```bash
+   export GROQ_API_KEY="gsk-proj_..."
+   ```
+
+   Get your API key from https://console.groq.com/
+
+4. **Use the pm command**:
+   ```bash
+   pm --help                      # Show help
+   pm config                      # Initialize configuration
+   pm compose "your message"      # Compose a message
+   ```
+
+### Usage Examples
+
+**Compose from command line:**
+```bash
+pm compose "hey i wanted to tell my boss the project got delayed"
+```
+
+**Compose interactively** (for longer messages):
+```bash
+pm compose
+# (paste your message, then press Ctrl+D)
+```
+
+**See all variants:**
+```bash
+pm compose "your text" --show-variants
+```
+
+**Use custom configuration:**
+```bash
+pm compose "your text" --config work-config.yaml
+```
+
+**Initialize configuration:**
+```bash
+pm config
+# (then edit config.yaml to customize voice rules)
+```
+
+### What the `pm` Command Does
+
+The `pm` command is created by the `setup.py` entry point configuration:
+- It maps to the `app()` function in `src/cli.py`
+- Provides professional message composition
+- Offers configuration management
+- Works across your entire system once installed
+
 ## Quick Start
 
 ### Environment Setup
