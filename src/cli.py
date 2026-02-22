@@ -110,8 +110,8 @@ import os
 import sys
 import click
 from pathlib import Path
-from src.config import Config
-from src.agents.message_composer import MessageComposerAgent
+from .config import Config
+from .agents.message_composer import MessageComposerAgent
 
 
 @click.group()
