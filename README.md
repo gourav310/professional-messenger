@@ -1,22 +1,45 @@
 # Professional Messenger 📧
 
-An intelligent AI agent that transforms unstructured thoughts into professional, polished messages.
+Transform unstructured thoughts into polished professional messages with AI-powered composition and adaptive learning.
 
-**Turn this:** `"hey boss, project got delayed because the api was slow"`
-**Into this:** `"I wanted to inform you that we've encountered a delay in the project timeline due to API performance issues..."`
+**Input:** `"hey boss, project got delayed because the api was slow"`
+**Output:** `"I wanted to inform you that we've encountered a delay in the project timeline due to API performance issues..."`
 
 ---
 
-## ✨ Features
+## ✨ What It Does
 
-- 🤖 **AI-Powered Composition** - Uses Groq's LLM to analyze and improve messages
-- 🎯 **Tone Analysis** - Detects and corrects informal, unclear, or awkward language
-- 📋 **Multiple Variants** - Get 2-3 different professional versions to choose from
-- ⚙️ **Customizable** - Configure tone, formality, and style via YAML config
-- 📋 **CLI Tool** - Easy-to-use command-line interface
-- 💾 **Clipboard Integration** - Auto-copy composed message to clipboard
-- 🔄 **Agent Architecture** - Demonstrates modern AI agent patterns
-- 💡 **Smart Learning System** - System learns your preferred tone and formality after a few compositions and adapts future messages automatically
+Professional Messenger helps you write better messages by:
+1. **Analyzing** your unstructured input (tone, clarity, structure)
+2. **Composing** 2-3 professional variants automatically
+3. **Learning** from your feedback to adapt future messages to your style
+
+Works for emails, Slack messages, updates to colleagues - anywhere you need professional communication.
+
+---
+
+## 🏗️ How It Works (Architecture)
+
+The system uses two composition approaches:
+
+### **Simple Mode** (Fast)
+- Single LLM call with comprehensive prompt
+- No tools or reasoning loop
+- Best for: Quick messages, high-volume use, cost-sensitive scenarios
+- Speed: ~500-800ms
+- Usage: `pm compose "text" --mode=simple`
+
+### **Agent Mode** (Thorough)
+- Reasoning loop with multiple analysis steps
+- Uses tools to analyze tone, structure, and clarity
+- Best for: Complex messages, nuanced situations, detailed analysis
+- Speed: ~1-3 seconds
+- Usage: `pm compose "text" --mode=agent` (or just `pm compose "text"` - agent is default)
+
+Both modes return the same output: primary message + 2 variants.
+
+### **Smart Learning System**
+After composing, the system asks for feedback (which variant you preferred, why). After 3+ samples, it learns your preferences (tone, formality) and automatically adapts future messages to match your style. Your preferences are stored locally in `feedback.yaml`.
 
 ---
 
@@ -24,342 +47,188 @@ An intelligent AI agent that transforms unstructured thoughts into professional,
 
 ### Prerequisites
 - Python 3.8+
-- Groq API key (free account at https://console.groq.com/)
+- Groq API key (free at https://console.groq.com/)
 
 ### Installation
-
-**1. Clone the repository**
 ```bash
-git clone https://github.com/yourusername/professional-messenger.git
-cd professional-messenger
-```
-
-**2. Install the package**
-```bash
+git clone <repo-url> && cd professional-messenger
 pip install -e .
+export GROQ_API_KEY="your-key-here"
 ```
-
-This installs the package and creates the `pm` command.
-
-**3. Set up Groq API key**
-```bash
-export GROQ_API_KEY="your-api-key-here"
-```
-
-To make it permanent, add to your `~/.zshrc` or `~/.bashrc`:
-```bash
-echo 'export GROQ_API_KEY="your-api-key-here"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-**4. Verify installation**
-```bash
-pm --help
-```
-
-You should see the help menu. If `pm: command not found`, add Python bin to your PATH:
-```bash
-echo 'export PATH="/Users/$(whoami)/Library/Python/3.13/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
----
-
-## 💬 Usage
 
 ### Basic Usage
 ```bash
 pm compose "your unstructured message"
 ```
 
-**Example:**
+**With options:**
 ```bash
-pm compose "hey, can we reschedule the meeting? got swamped with other stuff"
+pm compose "text" --show-variants      # See all variants
+pm compose "text" --mode=agent         # Use reasoning loop (slower but thorough)
+pm compose "text" --clipboard=false    # Don't copy to clipboard
+pm compose "text" --config work.yaml   # Use custom config file
 ```
 
-**Output:**
-```
-✨ Composed Message:
-
-   Would it be possible to reschedule our meeting? I've encountered
-   some time constraints and would appreciate the flexibility.
-
-✅ Copied to clipboard!
-```
-
-### Show Alternative Variants
+**Interactive mode:**
 ```bash
-pm compose "your message" --show-variants
-```
-
-This displays the primary variant plus 2-3 alternatives with different tones.
-
-### Initialize Configuration
-```bash
-pm config init
-```
-
-Creates a `config.yaml` file where you can customize:
-- **Tone**: professional, casual, friendly
-- **Formality**: low, medium, high
-- **Number of variants**: 1-3
-- **Auto-copy**: true/false
-
-### Using Custom Config
-```bash
-pm compose "message" --config my-config.yaml
-```
-
-### Smart Learning System (Optional)
-
-After a few compositions, you can help the system learn your style:
-
-```bash
-pm compose "message"
-# Choose preferred variant, optionally provide feedback
-# System learns your preferred tone and formality
-```
-
-View your learned preferences:
-```bash
-pm feedback
-```
-
-Reset your preferences:
-```bash
-pm feedback-reset
-```
-
-See [Feedback Loop Guide](docs/FEEDBACK_LOOP_GUIDE.md) for complete details.
-
----
-
-## 🏗️ Architecture
-
-### How It Works
-
-1. **Input** - User provides unstructured message
-2. **Analysis** - LLM analyzes tone, clarity, structure
-3. **Composition** - Generates professional variants
-4. **Output** - Returns best variant + alternatives
-
-### Core Components
-
-| Component | Purpose |
-|-----------|---------|
-| **Agent** | Base class for autonomous reasoning systems |
-| **Tool** | Functions agents can invoke (analyze_tone, check_clarity, etc.) |
-| **MessageComposerAgent** | Main orchestrating agent |
-| **LLMClient** | Wrapper around Groq API |
-| **CLI** | Command-line interface using Click |
-
-### Agent Reasoning Loop
-
-```
-Input Message
-    ↓
-LLM sees message + available tools
-    ↓
-LLM decides: analyze tone? check clarity? reorganize?
-    ↓
-Execute chosen tools
-    ↓
-LLM sees original + analysis results
-    ↓
-LLM composes professional variants
-    ↓
-Output variants to user
-```
-
-The LLM **decides** what's needed - it's adaptive, not pre-programmed.
-
----
-
-## 📦 What's Included
-
-```
-professional-messenger/
-├── src/
-│   ├── agent.py              # Base Agent and Tool classes
-│   ├── llm_client.py         # Groq API wrapper
-│   ├── config.py             # Configuration management
-│   ├── cli.py                # CLI interface (this becomes 'pm' command)
-│   └── agents/
-│       └── message_composer.py   # Main agent implementation
-├── tests/                    # Unit tests (29 tests, all passing)
-├── examples/                 # Example code
-├── docs/                     # Documentation and plans
-├── setup.py                  # Package configuration
-└── README.md                 # This file
+pm compose    # Paste multi-line messages, press Ctrl+D when done
 ```
 
 ---
 
-## 🔧 Development
+## 📦 Features
 
-### Run Tests
-```bash
-python3 -m pytest tests/ -v
-```
-
-Expected: 29 tests passing
-
-### Run Tests with Coverage
-```bash
-python3 -m pytest tests/ --cov=src
-```
-
-### Manual Testing
-```bash
-# Test message composition
-python3 -m src.cli compose "test message"
-
-# Or use the installed command
-pm compose "test message"
-```
-
----
-
-## 📚 Documentation
-
-- **[CLAUDE.md](CLAUDE.md)** - Developer guide with architecture, commands, and patterns
-- **[docs/FEEDBACK_LOOP_GUIDE.md](docs/FEEDBACK_LOOP_GUIDE.md)** - Complete guide to the learning system
-- **[docs/AGENT_FUNDAMENTALS.md](docs/AGENT_FUNDAMENTALS.md)** - Educational guide to agent concepts
-- **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** - System architecture diagrams
-- **[docs/PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md)** - Project overview
-
----
-
-## 🤖 How to Use
-
-### Example 1: Casual to Professional
-**Input:**
-```
-hey boss, just a heads up that we're gonna be a bit late on that deadline
-```
-
-**Output:**
-```
-I wanted to inform you that we anticipate a slight delay in meeting
-the originally scheduled deadline. We are working diligently to minimize
-this impact.
-```
-
-### Example 2: Unclear to Clear
-**Input:**
-```
-i need to talk to you about the thing we discussed before regarding the project
-```
-
-**Output:**
-```
-I would like to discuss our previous conversation regarding the project
-status and timeline. Could we schedule a brief meeting at your earliest
-convenience?
-```
-
-### Example 3: Raw Notes to Email
-**Input:**
-```
-exhausted from continuous work, need a day off
-```
-
-**Output:**
-```
-I wanted to inform you that I will be taking a personal day to rest and
-recharge. Should you have any critical matters, please don't hesitate
-to reach out to me.
-```
+- **Dual Composition Modes** - Choose between fast (simple) or thorough (agent) approaches
+- **Multiple Variants** - Get 2-3 options to pick from
+- **Adaptive Learning** - System learns your tone/formality preferences after a few messages
+- **Tone Correction** - Transforms casual/informal to professional
+- **Structure Improvement** - Organizes thoughts logically
+- **Clarity Enhancement** - Fixes vague parts and grammar
+- **Clipboard Integration** - Auto-copy best message to clipboard
+- **Customizable Configuration** - Define voice rules (tone, formality, word preferences)
+- **Feedback System** - Track what messages you prefer and why
+- **CLI Tool** - Easy-to-use command-line interface
 
 ---
 
 ## ⚙️ Configuration
 
-Create `config.yaml`:
+Create and customize `config.yaml`:
+
+```bash
+pm config    # Creates config.yaml from template
+nano config.yaml    # Edit your preferences
+```
+
+**Key settings:**
 ```yaml
 api:
   model: llama-3.3-70b-versatile
   max_tokens: 2048
 
 voice_rules:
-  tone: professional        # professional, casual, friendly
-  formality: medium         # low, medium, high
-  avoid_words:
-    - "like"
-    - "gonna"
-  key_phrases:
-    - "I appreciate"
-    - "Looking forward to"
+  tone: professional          # professional, casual, friendly, direct
+  formality: medium           # low, medium, high
+  avoid_words: ["like", "gonna"]
+  key_phrases: ["I appreciate", "Looking forward"]
 
 output:
-  num_variants: 2           # Number of alternatives
-  include_explanations: true
-  copy_to_clipboard: true   # Auto-copy to clipboard
+  num_variants: 2
+  copy_to_clipboard: true
+```
+
+Use different configs for different contexts:
+```bash
+pm compose "text" --config work-config.yaml
+pm compose "text" --config personal-config.yaml
 ```
 
 ---
 
-## 🔑 API Key Setup
+## 💬 Commands Reference
 
-### Get a Groq API Key
-1. Go to https://console.groq.com/
-2. Sign up for free (includes 100,000 tokens/day)
-3. Navigate to API Keys
-4. Copy your key
+| Command | Purpose |
+|---------|---------|
+| `pm compose "text"` | Compose from argument |
+| `pm compose` | Compose from interactive input |
+| `pm compose "text" --show-variants` | Show all variants |
+| `pm compose "text" --mode=agent` | Use agent mode (reasoning loop) |
+| `pm compose "text" --mode=simple` | Use simple mode (single call) |
+| `pm config` | Initialize/view configuration |
+| `pm feedback` | View learned preferences |
+| `pm feedback-reset` | Clear feedback history |
+| `pm --help` | Show help |
 
-### Set Environment Variable
+---
 
-**Temporary** (current session only):
+## 🧠 Smart Learning System
+
+The system learns from your choices:
+
 ```bash
-export GROQ_API_KEY="gsk_..."
+pm compose "message"
+# System asks: Which variant did you prefer?
+# System asks: Why?
+# System asks: Preferred tone/formality?
+
+pm feedback        # After 3+ entries, see what was learned
+pm feedback-reset  # Clear and start fresh
 ```
 
-**Permanent** (add to ~/.zshrc or ~/.bashrc):
+After 3+ feedback entries, the system automatically adapts new compositions to match your learned preferences. You'll see:
+- `🧠 Adapting to your preferred [tone] tone...`
+
+---
+
+## 📚 Documentation
+
+- **[CLAUDE.md](CLAUDE.md)** - Developer guide with architecture details and patterns
+- **[docs/FEEDBACK_LOOP_GUIDE.md](docs/FEEDBACK_LOOP_GUIDE.md)** - Complete learning system guide
+- **[docs/AGENT_FUNDAMENTALS.md](docs/AGENT_FUNDAMENTALS.md)** - Agent concepts explained
+- **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** - Architecture diagrams
+- **[docs/PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md)** - Project overview
+
+---
+
+## 🔧 Development
+
+**Run tests:**
 ```bash
-echo 'export GROQ_API_KEY="gsk_..."' >> ~/.zshrc
-source ~/.zshrc
+python3 -m pytest tests/ -v          # All tests
+python3 -m pytest tests/ --cov=src   # With coverage
+```
+
+**Manual testing:**
+```bash
+pm compose "test message"
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### `pm: command not found`
-**Solution:** Add Python bin directory to PATH:
-```bash
-echo 'export PATH="/Users/$(whoami)/Library/Python/3.13/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+| Issue | Solution |
+|-------|----------|
+| `pm: command not found` | Add Python bin to PATH: `echo 'export PATH="/Users/$(whoami)/Library/Python/3.13/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc` |
+| `GROQ_API_KEY not set` | `export GROQ_API_KEY="your-key-here"` |
+| Rate limit exceeded | Groq free tier: 100k tokens/day. Wait or upgrade at https://console.groq.com |
+| Tests failing | Ensure dependencies installed: `pip install -e .` |
+
+---
+
+## 📁 Project Structure
+
 ```
-
-### `GROQ_API_KEY not set`
-**Solution:** Set your API key:
-```bash
-export GROQ_API_KEY="your-key-here"
-```
-
-### Rate limit exceeded
-**Solution:** Groq free tier has 100,000 tokens/day. Either:
-- Wait until tomorrow (limit resets)
-- Upgrade to Dev Tier at https://console.groq.com/settings/billing
-
-### Tests failing
-**Solution:** Ensure dependencies are installed:
-```bash
-pip install -e .
-python3 -m pytest tests/ -v
+professional-messenger/
+├── src/
+│   ├── agent.py                 # Base Agent/Tool classes
+│   ├── llm_client.py            # Groq API wrapper
+│   ├── config.py                # Configuration management
+│   ├── cli.py                   # CLI interface
+│   ├── feedback.py              # Feedback collection
+│   ├── feedback_analyzer.py     # Learn from feedback
+│   ├── adaptive_prompt.py       # Adapt based on learning
+│   └── agents/
+│       ├── message_composer.py      # Agent mode (reasoning loop)
+│       └── simple_composer.py       # Simple mode (single call)
+├── tests/                       # Unit tests (~29 tests)
+├── docs/                        # Documentation
+├── config.yaml.example          # Configuration template
+└── CLAUDE.md                    # Developer guide
 ```
 
 ---
 
-## 🎯 What's Next
+## 🎯 Next Steps
 
 - ✅ Core agent infrastructure
 - ✅ CLI tool with message composition
 - ✅ Multiple variants generation
-- ✅ Feedback system with learning and adaptation
-- 🔄 Subagents (ToneAnalyzer, StructureOrganizer, ClarityEnhancer)
-- 📱 Telegram bot integration
-- 🧠 Advanced learning (per-recipient, context-aware preferences)
+- ✅ Feedback system with learning
+- ✅ Two composition modes (simple + agent)
+- 🔄 Subagents for specialized analysis
+- 📱 Telegram/Slack bot integration
+- 🧠 Advanced learning (per-recipient, context-aware)
 
 ---
 
@@ -367,8 +236,8 @@ python3 -m pytest tests/ -v
 
 This project is designed to be educational. Feel free to:
 - Fork and experiment
-- Modify prompts and tools
-- Add new agent capabilities
+- Modify prompts and system behaviors
+- Add new composition modes
 - Build integrations
 
 See [docs/plans/](docs/plans/) for implementation roadmap.
@@ -381,15 +250,9 @@ See [docs/plans/](docs/plans/) for implementation roadmap.
 
 ---
 
-## 👤 Author
-
-[Your name/contact info]
-
----
-
 ## 🙏 Acknowledgments
 
-- Built with [Groq API](https://groq.com/)
+- Built with [Groq API](https://groq.com/) (fast open-source LLMs)
 - CLI powered by [Click](https://click.palletsprojects.com/)
 - Agent pattern inspired by modern AI frameworks
 
