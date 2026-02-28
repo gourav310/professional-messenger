@@ -497,6 +497,47 @@ def compose(text, show_variants, clipboard, config, mode):
         # Return exits the command
         return
 
+    # Load feedback history and generate adaptive prompt (NEW)
+    # ═════════════════════════════════════════════════════════════════════════
+    # Use learned preferences to adapt the system prompt if we have enough data
+    # ═════════════════════════════════════════════════════════════════════════
+
+    from src.feedback import FeedbackCollector
+    from src.feedback_analyzer import FeedbackAnalyzer
+    from src.adaptive_prompt import AdaptivePromptGenerator
+
+    collector = FeedbackCollector()
+    adaptive_system_prompt = None
+
+    if collector.count() >= 3:  # Only use after 3+ samples
+        analyzer = FeedbackAnalyzer(collector.get_all())
+        dominant = analyzer.get_dominant_preferences()
+        confidence_tone = analyzer.confidence("tone")
+        confidence_formality = analyzer.confidence("formality")
+
+        # Average confidence
+        confidence = (confidence_tone + confidence_formality) / 2 if dominant["tone"] or dominant["formality"] else 0.0
+
+        adapter = AdaptivePromptGenerator(
+            preferred_tone=dominant["tone"],
+            preferred_formality=dominant["formality"],
+            confidence=confidence,
+            confidence_threshold=0.5
+        )
+
+        # Show context message
+        context_msg = adapter.get_context_message()
+        if context_msg:
+            click.echo(f"\n🧠 {context_msg}")
+
+        # Get the appropriate base prompt
+        if mode == 'agent':
+            base_prompt = MessageComposerAgent(api_key=api_key).system_prompt
+        else:
+            base_prompt = SimpleComposer(api_key=api_key).system_prompt
+
+        adaptive_system_prompt = adapter.adapt_prompt(base_prompt)
+
     # Create agent and compose
     # ═════════════════════════════════════════════════════════════════════════
     # Route to appropriate composer based on mode:
@@ -521,8 +562,11 @@ def compose(text, show_variants, clipboard, config, mode):
         else:
             agent = SimpleComposer(api_key=api_key)
 
-        # Run composition - this is the main work
-        result = agent.compose(text)
+        # Run composition - pass learned preferences if available
+        if adaptive_system_prompt:
+            result = agent.compose(text, adaptive_system_prompt=adaptive_system_prompt)
+        else:
+            result = agent.compose(text)
     except Exception as e:
         # Composition failed - could be API error, network, etc.
         click.echo(f"❌ Error during composition: {e}")
@@ -535,23 +579,17 @@ def compose(text, show_variants, clipboard, config, mode):
     # Make output clear and easy to read
     # ═════════════════════════════════════════════════════════════════════════
 
-    # Show primary message
-    # The "best" version according to the LLM
-    click.echo("\n✨ Composed Message:\n")
-    click.echo(f"   {result['primary']}\n")
+    # Display results with clear separation
+    separator = "─" * 60
+    all_variants = [result['primary']] + result['variants']
+    labels = ["Formal", "Balanced", "Direct"]
 
-    # Show variants if requested
-    # ═════════════════════════════════════════════════════════════════════════
-    # user can see alternatives and choose which fits their style best
-    # --show-variants flag enables this
-    # ═════════════════════════════════════════════════════════════════════════
-
-    if show_variants and result['variants']:
-        # User wants to see alternatives
-        click.echo("📋 Alternative versions:\n")
-        # Show each variant numbered for clarity
-        for i, var in enumerate(result['variants'], 1):
-            click.echo(f"   Option {i}: {var}\n")
+    click.echo(f"\n{separator}")
+    for i, (label, variant) in enumerate(zip(labels, all_variants), 1):
+        if variant:
+            click.echo(f"  [{i}] {label}")
+            click.echo(f"  {variant}")
+            click.echo(separator)
 
     # Copy to clipboard if requested
     # ═════════════════════════════════════════════════════════════════════════
@@ -572,6 +610,59 @@ def compose(text, show_variants, clipboard, config, mode):
             # Clipboard not available - graceful failure
             # Message was already shown, so user can still see/use it
             click.echo("ℹ️  (Clipboard copy not available on this system)")
+
+    # Collect feedback (OPTIONAL - doesn't break if it fails)
+    # ═════════════════════════════════════════════════════════════════════════
+    # After showing variants, ask user for feedback to train the learning system
+    # This is non-critical - if it fails, we still showed the message
+    # ═════════════════════════════════════════════════════════════════════════
+
+    from src.feedback import FeedbackCollector, FeedbackEntry
+    from src.feedback_ui import FeedbackUI
+    from src.feedback_analyzer import FeedbackAnalyzer
+
+    feedback_ui = FeedbackUI()
+
+    try:
+        # Ask which variant user prefers
+        chosen_index = feedback_ui.prompt_variant_choice(labels)
+
+        # Ask why
+        reason = feedback_ui.prompt_feedback_reason()
+
+        # Optionally ask about preferences
+        preferred_tone = feedback_ui.prompt_tone_preference()
+        preferred_formality = feedback_ui.prompt_formality_preference()
+
+        # Store feedback
+        collector = FeedbackCollector()
+        entry = FeedbackEntry(
+            variant_index=chosen_index,
+            chosen=True,
+            reason=reason,
+            original_message=text,
+            composed_variants=all_variants,
+            preferred_tone=preferred_tone,
+            preferred_formality=preferred_formality,
+            mode=mode
+        )
+        collector.add(entry)
+
+        # Show learning status
+        feedback_ui.show_learning_status(collector.count())
+
+        # Show what was learned
+        if collector.count() >= 3:
+            analyzer = FeedbackAnalyzer(collector.get_all())
+            dominant = analyzer.get_dominant_preferences()
+            if dominant["tone"]:
+                click.echo(f"\n📍 Noted: You prefer {dominant['tone']} tone")
+            if dominant["formality"]:
+                click.echo(f"📍 Noted: You prefer {dominant['formality']} formality")
+
+    except Exception as e:
+        # Feedback collection is optional - don't break if it fails
+        click.echo(f"\n(Feedback collection skipped: {e})")
 
 
 @app.command()
@@ -772,6 +863,197 @@ def config():
         click.echo(f"✅ Config already exists at {config_path}")
         click.echo("📝 Edit this file to change your settings")
         click.echo(f"\n   nano {config_path}")
+
+
+@app.command()
+def feedback():
+    """View and manage feedback history.
+
+    This command shows what the system has learned about your preferences
+    based on your previous feedback after composing messages.
+
+    WHAT FEEDBACK DOES:
+    ═════════════════════════════════════════════════════════════════════
+
+    After composing messages, the system asks for feedback:
+    - Which variant did you like?
+    - Why did you choose it?
+    - What tone/formality do you prefer?
+
+    This feedback is stored and analyzed to learn your preferences.
+    Over time, the system adapts to YOUR style.
+
+    WHAT FEEDBACK SHOWS:
+    ═════════════════════════════════════════════════════════════════════
+
+    pm feedback displays:
+    - Total feedback entries collected
+    - Your tone preferences (professional, casual, etc.)
+    - Your formality preferences (low, medium, high)
+    - Which message variants you prefer most
+    - Common words in your feedback reasons
+
+    EXAMPLE OUTPUT:
+    ═════════════════════════════════════════════════════════════════════
+
+    📊 Feedback Summary
+
+       Total entries: 5
+
+       Tone Preferences:
+       • professional: 3 times
+       • balanced: 2 times
+
+       Formality Preferences:
+       • medium: 4 times
+       • high: 1 time
+
+       Preferred Variants:
+       • Formal: 3 times
+       • Balanced: 2 times
+
+       Common Feedback Words:
+       professional, clear, appropriate, direct
+
+       Your Pattern:
+       Professional, medium formality
+
+    USAGE:
+    ═════════════════════════════════════════════════════════════════════
+
+    1. View feedback summary:
+       pm feedback
+
+    2. Clear feedback history:
+       pm feedback-reset
+
+    TIPS:
+    ═════════════════════════════════════════════════════════════════════
+
+    - Minimum 3 feedback entries needed for learning
+    - More feedback = better adaptation
+    - Feedback is stored locally in feedback.yaml
+    - You can reset anytime with pm feedback-reset
+    """
+
+    from src.feedback import FeedbackCollector
+    from src.feedback_analyzer import FeedbackAnalyzer
+
+    collector = FeedbackCollector()
+
+    if collector.count() == 0:
+        click.echo("📊 No feedback collected yet")
+        click.echo("   Provide feedback after composing to help the system learn!")
+        return
+
+    click.echo(f"\n📊 Feedback Summary\n")
+    click.echo(f"   Total entries: {collector.count()}")
+
+    analyzer = FeedbackAnalyzer(collector.get_all())
+    summary = analyzer.get_summary()
+    dominant = analyzer.get_dominant_preferences()
+
+    # Show tone preferences
+    if summary["tone_preferences"]:
+        click.echo(f"\n   Tone Preferences:")
+        for tone, count in sorted(summary["tone_preferences"].items(), key=lambda x: -x[1]):
+            click.echo(f"      • {tone}: {count} times")
+
+    # Show formality preferences
+    if summary["formality_preferences"]:
+        click.echo(f"\n   Formality Preferences:")
+        for formality, count in sorted(summary["formality_preferences"].items(), key=lambda x: -x[1]):
+            click.echo(f"      • {formality}: {count} times")
+
+    # Show which variants were most chosen
+    if summary["variant_preferences"]:
+        click.echo(f"\n   Preferred Variants:")
+        labels = ["Formal", "Balanced", "Direct"]
+        for idx, count in sorted(summary["variant_preferences"].items(), key=lambda x: -x[1]):
+            label = labels[int(idx)] if int(idx) < len(labels) else f"Variant {idx}"
+            click.echo(f"      • {label}: {count} times")
+
+    # Show keywords from feedback
+    if summary["average_reason_keywords"]:
+        click.echo(f"\n   Common Feedback Words:")
+        click.echo(f"      {', '.join(summary['average_reason_keywords'])}")
+
+    # Show dominant preferences
+    click.echo(f"\n   Your Pattern:")
+    parts = []
+    if dominant["tone"]:
+        parts.append(dominant["tone"])
+    if dominant["formality"]:
+        parts.append(f"{dominant['formality']} formality")
+
+    if parts:
+        click.echo(f"      {', '.join(parts).title()}")
+
+    # Offer reset option
+    click.echo(f"\n   Options:")
+    click.echo(f"      pm feedback-reset    # Clear all feedback")
+
+
+@app.command()
+def feedback_reset():
+    """Clear all collected feedback.
+
+    This command deletes all feedback entries. This is useful if:
+    - You want to start learning from scratch
+    - Your preferences have changed significantly
+    - You want to reset the system's understanding of your style
+
+    WARNING: This cannot be undone. Deleted feedback is permanently removed.
+
+    USAGE:
+    ═════════════════════════════════════════════════════════════════════
+
+    Clear feedback (with confirmation):
+       pm feedback-reset
+
+    The system will ask you to confirm before deleting.
+
+    WHEN TO USE:
+    ═════════════════════════════════════════════════════════════════════
+
+    - Starting fresh with new preferences
+    - Your communication style has changed
+    - Testing different configuration approaches
+    - Clearing out old feedback before major changes
+
+    AFTER RESETTING:
+    ═════════════════════════════════════════════════════════════════════
+
+    After resetting, you'll need 3+ new feedback entries before the system
+    learns your preferences again. Provide feedback by:
+
+    1. Run: pm compose "your message"
+    2. Choose a variant
+    3. Provide feedback when asked
+    4. Repeat 2+ more times
+
+    Then the system will have learned your preferences again.
+    """
+
+    from src.feedback import FeedbackCollector
+
+    collector = FeedbackCollector()
+    count = collector.count()
+
+    if count == 0:
+        click.echo("   No feedback to clear")
+        return
+
+    confirm = click.confirm(
+        f"   Clear {count} feedback entries? (cannot undo)",
+        default=False
+    )
+
+    if confirm:
+        collector.clear()
+        click.echo(f"   ✅ Cleared {count} entries")
+    else:
+        click.echo("   Cancelled")
 
 
 def _copy_to_clipboard(text: str) -> None:

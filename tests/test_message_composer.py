@@ -1,9 +1,9 @@
 """
-Tests for MessageComposerAgent.
+Tests for MessageComposerAgent and SimpleComposer.
 
-These tests verify that the MessageComposerAgent initializes correctly,
-has the required tools, and defines a system prompt for professional
-message composition.
+These tests verify that the MessageComposerAgent and SimpleComposer
+initialize correctly, have required tools/capabilities, and define
+a system prompt for professional message composition.
 
 The tests follow a behavior-driven approach:
 - Test what the agent does, not how it does it
@@ -15,7 +15,9 @@ This allows the implementation to change while tests remain stable.
 """
 
 import pytest
+from unittest.mock import patch
 from src.agents.message_composer import MessageComposerAgent
+from src.agents.simple_composer import SimpleComposer
 
 
 def test_message_composer_initialization():

@@ -182,7 +182,7 @@ After the three variants, provide a brief explanation of:
         except ValueError:
             self.llm_client = None
 
-    def compose(self, user_input: str, max_tokens: int = 1024) -> dict:
+    def compose(self, user_input: str, max_tokens: int = 1024, adaptive_system_prompt: str = None) -> dict:
         """
         Compose professional message variants with a single LLM call.
 
@@ -231,6 +231,11 @@ After the three variants, provide a brief explanation of:
             max_tokens: Maximum response length. Default 1024 is usually enough.
                        Increase if variants are being cut off.
 
+            adaptive_system_prompt: Optional system prompt with learned preferences.
+                                   If provided, uses this instead of self.system_prompt.
+                                   Allows adaptation based on user's feedback history.
+                                   Default: None (uses self.system_prompt)
+
         Returns:
             dict with keys:
             - "primary": Best message variant (String)
@@ -249,6 +254,10 @@ After the three variants, provide a brief explanation of:
         # Validate LLM client
         if not self.llm_client:
             raise ValueError("LLMClient not initialized. Check API key.")
+
+        # Choose which system prompt to use
+        # If adaptive_system_prompt provided, use it; otherwise use the default
+        system_to_use = adaptive_system_prompt if adaptive_system_prompt else self.system_prompt
 
         # Format initial message
         # Unlike MessageComposerAgent, we don't ask "what tools do you need"
@@ -280,7 +289,7 @@ Then explain your reasoning."""
         # The system_prompt does all the thinking guidance.
         response = self.llm_client.create_message(
             messages=conversation,
-            system=self.system_prompt,
+            system=system_to_use,  # Use adaptive prompt if provided
             tools=[],  # No tools for SimpleComposer
             max_tokens=max_tokens
         )
@@ -297,124 +306,55 @@ Then explain your reasoning."""
         }
 
     def _extract_primary(self, text: str) -> str:
-        """
-        Extract primary (best) message variant from LLM's output.
-
-        This method is copied from MessageComposerAgent to ensure
-        consistent parsing between simple and complex agents.
-
-        WHY EXTRACT METHODS:
-        ═════════════════════════════════════════════════════════════════
-
-        The LLM returns text with multiple pieces:
-        - Multiple variant messages
-        - Explanation and reasoning
-        - Possibly other analysis
-
-        We need to extract just the primary variant (the best one).
-
-        The parsing logic is identical to MessageComposerAgent so that
-        both agents produce the same output format.
-
-        Args:
-            text: Full LLM response
-
-        Returns:
-            str: Primary message variant
-
-        Example:
-            >>> text = '''Professional Message 1: Hello there...
-            ...           Professional Message 2: Hi...'''
-            >>> primary = composer._extract_primary(text)
-            >>> assert "Hello" in primary
-        """
-
+        """Extract primary (first) message variant from LLM's output."""
         lines = text.split('\n')
 
-        # Look for explicit markers like "Primary" or "Version 1"
         for i, line in enumerate(lines):
-            if any(marker in line.lower() for marker in ['primary', 'message 1', 'version 1']):
-                # Found a marker - return the next few lines
-                result_lines = []
-                for j in range(i, min(i + 5, len(lines))):
-                    if lines[j].strip():
-                        result_lines.append(lines[j].strip())
-                if result_lines:
-                    return ' '.join(result_lines)
+            if any(marker in line.lower() for marker in ['message 1', 'version 1', 'option 1']):
+                # Extract content after the colon on the same line
+                if ':' in line:
+                    content = line.split(':', 1)[1].strip()
+                    if content:
+                        return content
+                # Content may be on the next line
+                for j in range(i + 1, min(i + 4, len(lines))):
+                    stripped = lines[j].strip()
+                    if stripped:
+                        return stripped
 
-        # Fallback: return first substantive paragraph
-        result_lines = []
+        # Fallback: return first substantive line that isn't a label
         for line in lines:
             stripped = line.strip()
             if stripped and not any(word in stripped.lower()
-                                   for word in ['analysis', 'issues', 'suggestions', 'reasoning:', 'tone:']) \
-               and len(result_lines) < 5:
-                result_lines.append(stripped)
-                if len(result_lines) >= 2:
-                    break
-
-        if result_lines:
-            return ' '.join(result_lines)
-
-        # Last resort: return first non-empty line
-        for line in lines:
-            if line.strip():
-                return line.strip()
+                                   for word in ['analysis', 'issues', 'suggestions',
+                                                'reasoning:', 'tone:', 'message', 'version', 'option']):
+                return stripped
 
         return ""
 
     def _extract_variants(self, text: str) -> list:
-        """
-        Extract alternative message variants from LLM's output.
-
-        This method is copied from MessageComposerAgent to ensure
-        consistent parsing between simple and complex agents.
-
-        WHY CONSISTENT EXTRACTION:
-        ═════════════════════════════════════════════════════════════════
-
-        Both SimpleComposer and MessageComposerAgent should:
-        1. Return variants in same format
-        2. Extract them the same way
-        3. Provide same output contract
-
-        This means users can swap agents without changing client code.
-
-        Args:
-            text: Full LLM response with multiple variants
-
-        Returns:
-            list[str]: Alternative variants (2 items typically)
-
-        Example:
-            >>> text = '''Professional Message 1: ...
-            ...           Professional Message 2: ...
-            ...           Professional Message 3: ...'''
-            >>> variants = composer._extract_variants(text)
-            >>> assert len(variants) <= 2  # Return alternatives only
-        """
-
+        """Extract alternative message variants (2 and 3) from LLM's output."""
         lines = text.split('\n')
         variants = []
 
         for i, line in enumerate(lines):
-            # Look for variant indicators (not "1" which is primary)
             if any(marker in line.lower()
-                   for marker in ['message 2', 'message 3', 'alternative', 'variant', 'option']):
-                # Found variant marker - collect the next few lines
-                variant_lines = []
-                for j in range(i + 1, min(i + 5, len(lines))):
-                    if lines[j].strip() and not any(
-                        bad_word in lines[j].lower()
-                        for bad_word in ['analysis', 'issues:', 'tone:', 'primary', 'message 1']
+                   for marker in ['message 2', 'message 3', 'version 2', 'version 3',
+                                  'option 2', 'option 3']):
+                # Extract content after the colon on the same line
+                if ':' in line:
+                    content = line.split(':', 1)[1].strip()
+                    if content:
+                        variants.append(content)
+                        continue
+                # Content may be on the next line
+                for j in range(i + 1, min(i + 4, len(lines))):
+                    stripped = lines[j].strip()
+                    if stripped and not any(
+                        bad_word in stripped.lower()
+                        for bad_word in ['analysis', 'issues:', 'tone:', 'message', 'version', 'option']
                     ):
-                        variant_lines.append(lines[j].strip())
-                    elif len(variant_lines) > 0:
-                        # Hit a blank line after collecting text
+                        variants.append(stripped)
                         break
 
-                if variant_lines:
-                    variants.append(' '.join(variant_lines))
-
-        # Return up to 2 alternatives (3 total including primary)
         return variants[:2]

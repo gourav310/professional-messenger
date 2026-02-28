@@ -16,6 +16,7 @@ An intelligent AI agent that transforms unstructured thoughts into professional,
 - 📋 **CLI Tool** - Easy-to-use command-line interface
 - 💾 **Clipboard Integration** - Auto-copy composed message to clipboard
 - 🔄 **Agent Architecture** - Demonstrates modern AI agent patterns
+- 💡 **Smart Learning System** - System learns your preferred tone and formality after a few compositions and adapts future messages automatically
 
 ---
 
@@ -109,6 +110,28 @@ Creates a `config.yaml` file where you can customize:
 pm compose "message" --config my-config.yaml
 ```
 
+### Smart Learning System (Optional)
+
+After a few compositions, you can help the system learn your style:
+
+```bash
+pm compose "message"
+# Choose preferred variant, optionally provide feedback
+# System learns your preferred tone and formality
+```
+
+View your learned preferences:
+```bash
+pm feedback
+```
+
+Reset your preferences:
+```bash
+pm feedback-reset
+```
+
+See [Feedback Loop Guide](docs/FEEDBACK_LOOP_GUIDE.md) for complete details.
+
 ---
 
 ## 🏗️ Architecture
@@ -200,6 +223,7 @@ pm compose "test message"
 ## 📚 Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide with architecture, commands, and patterns
+- **[docs/FEEDBACK_LOOP_GUIDE.md](docs/FEEDBACK_LOOP_GUIDE.md)** - Complete guide to the learning system
 - **[docs/AGENT_FUNDAMENTALS.md](docs/AGENT_FUNDAMENTALS.md)** - Educational guide to agent concepts
 - **[docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md)** - System architecture diagrams
 - **[docs/PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md)** - Project overview
@@ -332,9 +356,10 @@ python3 -m pytest tests/ -v
 - ✅ Core agent infrastructure
 - ✅ CLI tool with message composition
 - ✅ Multiple variants generation
+- ✅ Feedback system with learning and adaptation
 - 🔄 Subagents (ToneAnalyzer, StructureOrganizer, ClarityEnhancer)
 - 📱 Telegram bot integration
-- 💾 Feedback system to learn from user preferences
+- 🧠 Advanced learning (per-recipient, context-aware preferences)
 
 ---
 

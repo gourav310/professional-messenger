@@ -746,7 +746,7 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         self.add_tool(suggest_structure_tool)
         self.add_tool(check_clarity_tool)
 
-    def compose(self, user_input: str, max_iterations: int = 5) -> dict:
+    def compose(self, user_input: str, max_iterations: int = 5, adaptive_system_prompt: str = None) -> dict:
         """
         Compose professional message variants using the reasoning loop.
 
@@ -920,6 +920,11 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
                           If reached, returns what we have so far.
                           Range: 1-10 (more than 10 is unusual)
 
+            adaptive_system_prompt: Optional system prompt with learned preferences.
+                                   If provided, uses this instead of self.system_prompt.
+                                   Allows adaptation based on user's feedback history.
+                                   Default: None (uses self.system_prompt)
+
         Returns:
             dict with keys:
             - "primary": The best message variant (String)
@@ -994,6 +999,10 @@ REMEMBER: Your success = delivering message variants, not analysis perfection.""
         # The LLM reads the full history to understand context.
         # ═════════════════════════════════════════════════════════════════
 
+        # Choose which system prompt to use
+        # If adaptive_system_prompt provided, use it; otherwise use the default
+        system_to_use = adaptive_system_prompt if adaptive_system_prompt else self.system_prompt
+
         conversation = []
 
         # Step 1: Create initial prompt for the LLM
@@ -1062,7 +1071,7 @@ Use the appropriate tools to gather information, then synthesize your analysis i
 
             response = self.llm_client.create_message(
                 messages=conversation,
-                system=self.system_prompt,
+                system=system_to_use,  # Use adaptive prompt if provided
                 tools=self.get_tools_for_api(),  # Make tools available
                 max_tokens=2048
             )
