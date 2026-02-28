@@ -11,6 +11,7 @@ api:
   # Note: GROQ_API_KEY is read from environment variable
   model: llama-3.3-70b-versatile    # Groq model to use
   max_tokens: 2048                  # Max response length
+  mode: simple                      # simple (fast, 1 LLM call) or agent (thorough, multi-step reasoning loop)
 
 voice_rules:
   # Communication style preferences
